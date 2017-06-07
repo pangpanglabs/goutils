@@ -6,9 +6,10 @@ It is a very simple test helper.
 
 ```golang
 import (
-	"pangpanglabs/goutils/test"
 	"testing"
 	"time"
+
+	"github.com/pangpanglabs/goutils/test"
 )
 
 func TestXXX(t *testing.T) {
