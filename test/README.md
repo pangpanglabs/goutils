@@ -4,7 +4,7 @@ It is a very simple test helper.
 
 ## Getting Started
 
-```
+```golang
 import (
 	"pangpanglabs/goutils/test"
 	"testing"
