@@ -5,7 +5,11 @@ It is a very simple test helper.
 ## Getting Started
 
 ```
-import "pangpanglabs/goutils/test"
+import (
+	"pangpanglabs/goutils/test"
+	"testing"
+	"time"
+)
 
 func TestXXX(t *testing.T) {
 	at, err := time.Parse("2006-01-02", "2017-12-31")
