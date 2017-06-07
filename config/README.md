@@ -35,7 +35,6 @@ config.yml:
 database:
   driver: sqlite3
   connection: pos.db
-  showSQL: true
 debug: true
 httpport: 8080
 ```
@@ -57,6 +56,5 @@ config.production.yml:
 ```yaml
 database:
   connection: username:password@tcp(production.server.com:3307)/db_name?charset=utf8&parseTime=True&loc=UTC
-  showSQL: false
 debug: false
 ```
