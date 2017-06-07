@@ -49,12 +49,12 @@ config.staging.yml:
 ```yaml
 database:
   driver: mysql
-  connection: username:password@tcp(staging.server.com:3307)/db_name?charset=utf8&parseTime=True&loc=UTC
+  connection: username:password@tcp(staging.db.server:3307)/db_name?charset=utf8&parseTime=True&loc=UTC
 ```
 
 config.production.yml:
 ```yaml
 database:
-  connection: username:password@tcp(production.server.com:3307)/db_name?charset=utf8&parseTime=True&loc=UTC
+  connection: username:password@tcp(production.db.server:3306)/db_name?charset=utf8&parseTime=True&loc=UTC
 debug: false
 ```
