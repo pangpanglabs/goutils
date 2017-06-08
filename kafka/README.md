@@ -22,8 +22,7 @@ msg := map[string]interface{}{
         "idx":  i,
         "msg":  rand.Int(),
 }
-err := producer.Send(msg)
-if err != nil {
+if err := producer.Send(msg); err != nil {
         return err
 }
 ```
