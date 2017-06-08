@@ -32,7 +32,7 @@ func TestPubSub(t *testing.T) {
 	})
 	test.Ok(t, err)
 
-	consumer, err := kafka.NewConsumer(brokers, topic, "newest", func(c *sarama.Config) {
+	consumer, err := kafka.NewConsumer(brokers, topic, sarama.OffsetNewest, func(c *sarama.Config) {
 		if tlsConfig, err := createTlsConfiguration(); err == nil {
 			c.Net.TLS.Config = tlsConfig
 			c.Net.TLS.Enable = true

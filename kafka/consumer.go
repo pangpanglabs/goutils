@@ -1,7 +1,6 @@
 package kafka
 
 import (
-	"errors"
 	"log"
 	"os"
 	"os/signal"
@@ -18,7 +17,7 @@ type Consumer struct {
 	closing  chan struct{}
 }
 
-func NewConsumer(brokers []string, topic, offset string, options ...func(*sarama.Config)) (*Consumer, error) {
+func NewConsumer(brokers []string, topic string, initialOffset int64, options ...func(*sarama.Config)) (*Consumer, error) {
 	kafkaConfig := sarama.NewConfig()
 	for _, option := range options {
 		option(kafkaConfig)
@@ -26,16 +25,6 @@ func NewConsumer(brokers []string, topic, offset string, options ...func(*sarama
 	kafkaConsumer, err := sarama.NewConsumer(brokers, kafkaConfig)
 	if err != nil {
 		return nil, err
-	}
-
-	var initialOffset int64
-	switch offset {
-	case "oldest":
-		initialOffset = sarama.OffsetOldest
-	case "newest":
-		initialOffset = sarama.OffsetNewest
-	default:
-		return nil, errors.New("offset should be `oldest` or `newest`")
 	}
 
 	consumer := &Consumer{

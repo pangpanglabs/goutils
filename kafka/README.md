@@ -31,7 +31,7 @@ if err != nil {
 ## Consumer
 
 ```golang
-consumer, err := kafka.NewConsumer(brokers, topic, "newest")
+consumer, err := kafka.NewConsumer(brokers, topic, sarama.OffsetNewest)
 if err != nil {
         return err
 }
