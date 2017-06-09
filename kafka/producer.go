@@ -48,3 +48,7 @@ func (p *Producer) Send(v interface{}) error {
 
 	return nil
 }
+
+func (p *Producer) Close() error {
+	return p.producer.Close()
+}
