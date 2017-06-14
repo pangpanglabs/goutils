@@ -10,14 +10,17 @@ import (
 	"github.com/Shopify/sarama"
 )
 
+const AllPartitions int32 = -1
+
 type Consumer struct {
-	topic    string
-	offset   int64
-	consumer sarama.Consumer
-	closing  chan struct{}
+	topic     string
+	partition int32
+	offset    int64
+	consumer  sarama.Consumer
+	closing   chan struct{}
 }
 
-func NewConsumer(brokers []string, topic string, initialOffset int64, options ...func(*sarama.Config)) (*Consumer, error) {
+func NewConsumer(brokers []string, topic string, partition int32, initialOffset int64, options ...func(*sarama.Config)) (*Consumer, error) {
 	kafkaConfig := sarama.NewConfig()
 	for _, option := range options {
 		option(kafkaConfig)
@@ -42,9 +45,13 @@ func (c *Consumer) Close() {
 }
 
 func (c *Consumer) Messages() (<-chan *sarama.ConsumerMessage, error) {
-	partitionList, err := c.consumer.Partitions(c.topic)
-	if err != nil {
+	var partitionList []int32
+	if c.partition >= 0 {
+		partitionList = []int32{c.partition}
+	} else if list, err := c.consumer.Partitions(c.topic); err != nil {
 		return nil, err
+	} else {
+		partitionList = list
 	}
 
 	messages := make(chan *sarama.ConsumerMessage, 1024)

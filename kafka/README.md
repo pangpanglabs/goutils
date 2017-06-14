@@ -30,7 +30,7 @@ if err := producer.Send(msg); err != nil {
 ## Consumer
 
 ```golang
-consumer, err := kafka.NewConsumer(brokers, topic, sarama.OffsetNewest)
+consumer, err := kafka.NewConsumer(brokers, topic, kafka.AllPartitions, sarama.OffsetNewest)
 if err != nil {
         return err
 }
