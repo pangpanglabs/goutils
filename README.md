@@ -6,3 +6,4 @@ Golang utility packages
 - [goutils/test](/test)
 - [goutils/number](/number)
 - [goutils/kafka](/kafka)
+- [goutils/netrpc](/netrpc)
