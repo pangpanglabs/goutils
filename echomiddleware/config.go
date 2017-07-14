@@ -6,6 +6,9 @@ type KafkaConfig struct {
 }
 
 type ZipkinConfig struct {
+	Collector struct {
+		Url string
+	}
 	Addr, Service string
 	Kafka         KafkaConfig
 }
