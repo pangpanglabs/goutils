@@ -21,11 +21,6 @@ func (r TeeReadCloser) Close() error {
 	return nil
 }
 
-type KafkaConfig struct {
-	Brokers []string
-	Topic   string
-}
-
 func AccessLogger(serviceName string, config KafkaConfig) echo.MiddlewareFunc {
 	if len(config.Brokers) == 0 {
 		return nopMiddleware
