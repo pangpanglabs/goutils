@@ -26,7 +26,7 @@ type KafkaConfig struct {
 	Topic   string
 }
 
-func AccessTracer(serviceName string, config KafkaConfig) echo.MiddlewareFunc {
+func AccessLogger(serviceName string, config KafkaConfig) echo.MiddlewareFunc {
 	if len(config.Brokers) == 0 {
 		return nopMiddleware
 	}
