@@ -7,3 +7,5 @@ Golang utility packages
 - [goutils/number](/number)
 - [goutils/kafka](/kafka)
 - [goutils/netrpc](/netrpc)
+- [goutils/echomiddleware](/echomiddleware)
+- [goutils/echotpl](/echotpl)
