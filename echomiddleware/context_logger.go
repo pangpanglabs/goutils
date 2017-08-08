@@ -10,7 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const ContextLoggerName = "DB"
+const ContextLoggerName = "ContextLogger"
 
 func ContextLogger() echo.MiddlewareFunc {
 	logger := logrus.New()
