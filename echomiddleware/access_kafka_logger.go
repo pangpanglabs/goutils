@@ -2,6 +2,7 @@ package echomiddleware
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"log"
 	"strconv"
@@ -43,8 +44,21 @@ func AccessLogger(serviceName string, config KafkaConfig) echo.MiddlewareFunc {
 
 			var buf bytes.Buffer
 			tee := io.TeeReader(req.Body, &buf)
-			req.Body.Close()
 			req.Body = TeeReadCloser{tee}
+
+			request_id := req.Header.Get(echo.HeaderXRequestID)
+			if request_id == "" {
+				request_id = res.Header().Get(echo.HeaderXRequestID)
+			}
+			c.SetRequest(
+				req.WithContext(
+					context.WithValue(
+						req.Context(),
+						"request_id",
+						request_id,
+					),
+				),
+			)
 
 			start := time.Now()
 			if err = next(c); err != nil {
@@ -52,10 +66,6 @@ func AccessLogger(serviceName string, config KafkaConfig) echo.MiddlewareFunc {
 			}
 			stop := time.Now()
 
-			request_id := req.Header.Get(echo.HeaderXRequestID)
-			if request_id == "" {
-				request_id = res.Header().Get(echo.HeaderXRequestID)
-			}
 			path := req.URL.Path
 			if path == "" {
 				path = "/"
