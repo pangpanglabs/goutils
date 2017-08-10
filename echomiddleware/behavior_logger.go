@@ -140,7 +140,7 @@ func (c *BehaviorLogContext) WithBizAttrs(attrs map[string]interface{}) *Behavio
 	}
 	return c
 }
-func (c *BehaviorLogContext) WithRequestInfo(method, uri string, param interface{}, responseStatus int) *BehaviorLogContext {
+func (c *BehaviorLogContext) WithCallURLInfo(method, uri string, param interface{}, responseStatus int) *BehaviorLogContext {
 	c.Method = method
 	c.Uri = uri
 	c.Params = param
