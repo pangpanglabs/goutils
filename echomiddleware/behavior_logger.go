@@ -2,6 +2,7 @@ package echomiddleware
 
 import (
 	"context"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -145,6 +146,10 @@ func (c *BehaviorLogContext) WithCallURLInfo(method, uri string, param interface
 	c.Uri = uri
 	c.Params = param
 	c.Status = responseStatus
+	if url, err := url.Parse(uri); err == nil {
+		c.Path = url.Path
+		c.Host = url.Host
+	}
 
 	return c
 }
