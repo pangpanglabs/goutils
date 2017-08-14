@@ -42,8 +42,6 @@ const (
 	HeaderXForwardedFor = "X-Forwarded-For"
 	HeaderXRealIP       = "X-Real-IP"
 	HeaderContentLength = "Content-Length"
-
-	LogContextName = "behaviorlog"
 )
 
 var logger = logrus.New()
@@ -135,6 +133,7 @@ func (c *LogContext) Clone() *LogContext {
 		BizAttr:       map[string]interface{}{},
 	}
 }
+
 func (c *LogContext) WithBizAttr(key string, value interface{}) *LogContext {
 	c.BizAttr[key] = value
 	return c
