@@ -35,6 +35,7 @@ type LogContext struct {
 	Action        string                 `json:"action,omitempty"`
 	Body          string                 `json:"body,omitempty"`
 	BizAttr       map[string]interface{} `json:"bizAttr,omitempty"`
+	Err           error                  `json:"error,omitempty"`
 }
 
 const (
@@ -143,6 +144,10 @@ func (c *LogContext) WithControllerAndAction(controller, action string) *LogCont
 	c.Action = action
 	return c
 }
+func (c *LogContext) WithError(err error) *LogContext {
+	c.Err = err
+	return c
+}
 func (c *LogContext) WithBizAttrs(attrs map[string]interface{}) *LogContext {
 	for k, v := range attrs {
 		c.BizAttr[k] = v
@@ -170,7 +175,7 @@ func (c *LogContext) Write() {
 	if c.Producer != nil {
 		c.Producer.Send(c)
 	}
-	c.logger.WithFields(logrus.Fields{
+	logEntry := c.logger.WithFields(logrus.Fields{
 		"service":        c.Service,
 		"timestamp":      c.Timestamp.UTC().Format(time.RFC3339),
 		"request_id":     c.RequestID,
@@ -190,7 +195,11 @@ func (c *LogContext) Write() {
 		"action":         c.Action,
 		"body":           c.Body,
 		"bizAttr":        c.BizAttr,
-	}).Info()
+	})
+	if c.Err != nil {
+		logEntry = logEntry.WithError(c.Err)
+	}
+	logEntry.Info()
 }
 func NewNopContext() *LogContext {
 	return &LogContext{
