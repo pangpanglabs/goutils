@@ -203,6 +203,7 @@ func (c *LogContext) Write() {
 }
 func NewNopContext() *LogContext {
 	return &LogContext{
+		logger:  logrus.New(),
 		BizAttr: map[string]interface{}{},
 	}
 }
