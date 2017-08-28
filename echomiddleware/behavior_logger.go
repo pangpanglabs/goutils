@@ -83,7 +83,11 @@ func getControllerAndAction(c echo.Context) (controller, action string) {
 			}
 		}
 		handlerSplitIndex := strings.LastIndex(handlerName, ".")
-		controller, action = handlerName[:handlerSplitIndex], handlerName[handlerSplitIndex+1:]
+		if handlerSplitIndex == -1 || handlerSplitIndex >= len(handlerName) {
+			controller, action = "", handlerName
+		} else {
+			controller, action = handlerName[:handlerSplitIndex], handlerName[handlerSplitIndex+1:]
+		}
 	}
 	return
 }
