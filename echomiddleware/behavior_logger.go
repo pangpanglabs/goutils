@@ -17,8 +17,8 @@ const BehaviorLoggerName = "BehaviorLogger"
 func BehaviorLogger(serviceName string, config KafkaConfig) echo.MiddlewareFunc {
 	var producer *kafka.Producer
 	if p, err := kafka.NewProducer(config.Brokers, config.Topic, func(c *sarama.Config) {
-		c.Producer.RequiredAcks = sarama.WaitForLocal // Only wait for the leader to ack
-		// c.Producer.Compression = sarama.CompressionSnappy   // Compress messages
+		c.Producer.RequiredAcks = sarama.WaitForLocal       // Only wait for the leader to ack
+		c.Producer.Compression = sarama.CompressionGZIP     // Compress messages
 		c.Producer.Flush.Frequency = 500 * time.Millisecond // Flush batches every 500ms
 
 	}); err != nil {
