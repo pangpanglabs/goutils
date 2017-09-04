@@ -41,6 +41,11 @@ func (p *Producer) Send(v interface{}) error {
 		return err
 	}
 
+	if p.producer == nil {
+		log.Println("Kafka producer is nil")
+		return nil
+	}
+
 	p.producer.Input() <- &sarama.ProducerMessage{
 		Topic: p.topic,
 		Value: sarama.ByteEncoder(msg),
