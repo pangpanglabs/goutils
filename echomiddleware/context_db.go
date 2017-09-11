@@ -21,7 +21,7 @@ func ContextDB(service string, db *xorm.Engine, kafkaConfig KafkaConfig) echo.Mi
 	if len(kafkaConfig.Brokers) != 0 {
 		if producer, err := kafka.NewProducer(kafkaConfig.Brokers, kafkaConfig.Topic, func(c *sarama.Config) {
 			c.Producer.RequiredAcks = sarama.WaitForLocal       // Only wait for the leader to ack
-			c.Producer.Compression = sarama.CompressionSnappy   // Compress messages
+			c.Producer.Compression = sarama.CompressionGZIP     // Compress messages
 			c.Producer.Flush.Frequency = 500 * time.Millisecond // Flush batches every 500ms
 
 		}); err == nil {
