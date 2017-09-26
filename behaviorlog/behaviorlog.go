@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labstack/gommon/random"
 	"github.com/pangpanglabs/goutils/kafka"
 	"github.com/sirupsen/logrus"
 )
@@ -16,30 +17,36 @@ type LogContext struct {
 	Producer *kafka.Producer
 	logger   *logrus.Logger
 
-	Service       string                 `json:"service,omitempty"`
-	Timestamp     time.Time              `json:"timestamp,omitempty"`
-	RequestID     string                 `json:"request_id,omitempty"`
-	RemoteIP      string                 `json:"remote_ip,omitempty"`
-	Host          string                 `json:"host,omitempty"`
-	Uri           string                 `json:"uri,omitempty"`
-	Method        string                 `json:"method,omitempty"`
-	Path          string                 `json:"path,omitempty"`
-	Referer       string                 `json:"referer,omitempty"`
-	UserAgent     string                 `json:"user_agent,omitempty"`
-	Status        int                    `json:"status,omitempty"`
-	Latency       time.Duration          `json:"latency,omitempty"`
-	RequestLength int64                  `json:"request_length,omitempty"`
-	BytesSent     int64                  `json:"bytes_sent,omitempty"`
-	Params        interface{}            `json:"params,omitempty"`
-	Controller    string                 `json:"controller,omitempty"`
-	Action        string                 `json:"action,omitempty"`
-	Body          string                 `json:"body,omitempty"`
-	BizAttr       map[string]interface{} `json:"bizAttr,omitempty"`
-	Err           error                  `json:"error,omitempty"`
+	ParentActionID string `json:"parent_action_id,omitempty"`
+	ActionID       string `json:"action_id,omitempty"`
+	RequestID      string `json:"request_id,omitempty"`
+	Service        string `json:"service,omitempty"`
+
+	Timestamp     time.Time     `json:"timestamp,omitempty"`
+	RemoteIP      string        `json:"remote_ip,omitempty"`
+	Host          string        `json:"host,omitempty"`
+	Uri           string        `json:"uri,omitempty"`
+	Method        string        `json:"method,omitempty"`
+	Path          string        `json:"path,omitempty"`
+	Referer       string        `json:"referer,omitempty"`
+	UserAgent     string        `json:"user_agent,omitempty"`
+	Status        int           `json:"status,omitempty"`
+	Latency       time.Duration `json:"latency,omitempty"`
+	RequestLength int64         `json:"request_length,omitempty"`
+	BytesSent     int64         `json:"bytes_sent,omitempty"`
+
+	Params     interface{}            `json:"params,omitempty"`
+	Controller string                 `json:"controller,omitempty"`
+	Action     string                 `json:"action,omitempty"`
+	Body       string                 `json:"body,omitempty"`
+	BizAttr    map[string]interface{} `json:"bizAttr,omitempty"`
+
+	Err error `json:"error,omitempty"`
 }
 
 const (
 	HeaderXRequestID    = "X-Request-ID"
+	HeaderXActionID     = "X-Action-ID"
 	HeaderXForwardedFor = "X-Forwarded-For"
 	HeaderXRealIP       = "X-Real-IP"
 	HeaderContentLength = "Content-Length"
@@ -77,9 +84,12 @@ func New(serviceName string, req *http.Request, options ...func(*LogContext)) *L
 		// Producer: producer,
 		logger: logger,
 
-		Service:       serviceName,
+		Service:        serviceName,
+		ParentActionID: req.Header.Get(HeaderXActionID),
+		ActionID:       random.String(32),
+		RequestID:      req.Header.Get(HeaderXRequestID),
+
 		Timestamp:     time.Now(),
-		RequestID:     req.Header.Get(HeaderXRequestID),
 		RemoteIP:      realIP,
 		Host:          req.Host,
 		Uri:           req.RequestURI,
@@ -111,27 +121,29 @@ func KafkaProducer(p *kafka.Producer) func(*LogContext) {
 }
 func (c *LogContext) Clone() *LogContext {
 	return &LogContext{
-		Producer:      c.Producer,
-		logger:        c.logger,
-		Service:       c.Service,
-		Timestamp:     time.Now(),
-		RequestID:     c.RequestID,
-		RemoteIP:      c.RemoteIP,
-		Host:          c.Host,
-		Uri:           c.Uri,
-		Method:        c.Method,
-		Path:          c.Path,
-		Referer:       c.Referer,
-		UserAgent:     c.UserAgent,
-		Status:        c.Status,
-		Latency:       c.Latency,
-		RequestLength: c.RequestLength,
-		BytesSent:     c.BytesSent,
-		Params:        c.Params,
-		Controller:    c.Controller,
-		Action:        c.Action,
-		Body:          c.Body,
-		BizAttr:       map[string]interface{}{},
+		Producer:       c.Producer,
+		logger:         c.logger,
+		Service:        c.Service,
+		ParentActionID: c.ActionID,
+		ActionID:       random.String(32),
+		RequestID:      c.RequestID,
+		Timestamp:      time.Now(),
+		RemoteIP:       c.RemoteIP,
+		Host:           c.Host,
+		Uri:            c.Uri,
+		Method:         c.Method,
+		Path:           c.Path,
+		Referer:        c.Referer,
+		UserAgent:      c.UserAgent,
+		Status:         c.Status,
+		Latency:        c.Latency,
+		RequestLength:  c.RequestLength,
+		BytesSent:      c.BytesSent,
+		Params:         c.Params,
+		Controller:     c.Controller,
+		Action:         c.Action,
+		Body:           c.Body,
+		BizAttr:        map[string]interface{}{},
 	}
 }
 
