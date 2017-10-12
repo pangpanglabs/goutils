@@ -14,7 +14,7 @@ import (
 )
 
 type LogContext struct {
-	Producer *kafka.Producer
+	Producer *kafka.Producer `json:"-"`
 	logger   *logrus.Logger
 
 	ParentActionID string `json:"parent_action_id,omitempty"`
