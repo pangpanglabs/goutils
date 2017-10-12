@@ -2,7 +2,9 @@ package echomiddleware
 
 import (
 	"context"
+	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Shopify/sarama"
@@ -27,6 +29,8 @@ func BehaviorLogger(serviceName string, config KafkaConfig) echo.MiddlewareFunc 
 		producer = p
 	}
 
+	var echoRouter echoRouter
+
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
 			req := c.Request()
@@ -47,7 +51,7 @@ func BehaviorLogger(serviceName string, config KafkaConfig) echo.MiddlewareFunc 
 
 			behaviorLogger.Status = res.Status
 			behaviorLogger.BytesSent = res.Size
-			behaviorLogger.Controller, behaviorLogger.Action = getControllerAndAction(c)
+			behaviorLogger.Controller, behaviorLogger.Action = echoRouter.getControllerAndAction(c)
 
 			params := map[string]interface{}{}
 			for k, v := range c.QueryParams() {
@@ -64,7 +68,14 @@ func BehaviorLogger(serviceName string, config KafkaConfig) echo.MiddlewareFunc 
 	}
 }
 
-func getControllerAndAction(c echo.Context) (controller, action string) {
+type echoRouter struct {
+	once   sync.Once
+	routes map[string]string
+}
+
+func (er *echoRouter) getControllerAndAction(c echo.Context) (controller, action string) {
+	er.once.Do(func() { er.initialize(c) })
+
 	if v := c.Get("controller"); v != nil {
 		if controllerName, ok := v.(string); ok {
 			controller = controllerName
@@ -75,13 +86,9 @@ func getControllerAndAction(c echo.Context) (controller, action string) {
 			action = actionName
 		}
 	}
+
 	if controller == "" || action == "" {
-		var handlerName string
-		for _, r := range c.Echo().Routes() {
-			if r.Path == c.Path() && r.Method == c.Request().Method {
-				handlerName = r.Name
-			}
-		}
+		handlerName := er.routes[fmt.Sprintf("%s+%s", c.Path(), c.Request().Method)]
 		handlerSplitIndex := strings.LastIndex(handlerName, ".")
 		if handlerSplitIndex == -1 || handlerSplitIndex >= len(handlerName) {
 			controller, action = "", handlerName
@@ -90,4 +97,11 @@ func getControllerAndAction(c echo.Context) (controller, action string) {
 		}
 	}
 	return
+}
+
+func (er *echoRouter) initialize(c echo.Context) {
+	er.routes = make(map[string]string)
+	for _, r := range c.Echo().Routes() {
+		er.routes[fmt.Sprintf("%s+%s", r.Path, r.Method)] = r.Name
+	}
 }
