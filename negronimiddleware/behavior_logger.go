@@ -38,6 +38,6 @@ func (b *BehaviorLogger) ServeHTTP(rw http.ResponseWriter, req *http.Request, ne
 		BehaviorLoggerName, behaviorLogger,
 	)))
 
-	behaviorLogger.Status = req.Response.StatusCode
+	// behaviorLogger.Status = req.Response.StatusCode
 	behaviorLogger.Write()
 }
