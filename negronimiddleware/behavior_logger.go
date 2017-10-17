@@ -11,8 +11,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const BehaviorLoggerName = "BehaviorLogger"
-
 type BehaviorLogger struct {
 	serviceName string
 	producer    *kafka.Producer
@@ -35,7 +33,7 @@ func NewBehaviorLogger(serviceName string, brokers []string, topic string) *Beha
 func (b *BehaviorLogger) ServeHTTP(rw http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
 	behaviorLogger := behaviorlog.New(b.serviceName, req, behaviorlog.KafkaProducer(b.producer))
 	next(rw, req.WithContext(context.WithValue(req.Context(),
-		BehaviorLoggerName, behaviorLogger,
+		behaviorlog.LogContextName, behaviorLogger,
 	)))
 
 	// behaviorLogger.Status = req.Response.StatusCode

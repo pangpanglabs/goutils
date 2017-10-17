@@ -14,8 +14,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const BehaviorLoggerName = "BehaviorLogger"
-
 func BehaviorLogger(serviceName string, config KafkaConfig) echo.MiddlewareFunc {
 	var producer *kafka.Producer
 	if p, err := kafka.NewProducer(config.Brokers, config.Topic, func(c *sarama.Config) {
@@ -39,7 +37,7 @@ func BehaviorLogger(serviceName string, config KafkaConfig) echo.MiddlewareFunc 
 			behaviorLogger := behaviorlog.New(serviceName, req, behaviorlog.KafkaProducer(producer))
 
 			c.SetRequest(req.WithContext(context.WithValue(req.Context(),
-				BehaviorLoggerName, behaviorLogger,
+				behaviorlog.LogContextName, behaviorLogger,
 			)))
 
 			if err = next(c); err != nil {
