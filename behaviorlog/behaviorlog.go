@@ -58,6 +58,10 @@ func init() {
 	logger.Formatter = &logrus.JSONFormatter{}
 }
 
+func SetLogLevel(level logrus.Level) {
+	logger.SetLevel(level)
+}
+
 func New(serviceName string, req *http.Request, options ...func(*LogContext)) *LogContext {
 	realIP := req.RemoteAddr
 	if ip := req.Header.Get(HeaderXForwardedFor); ip != "" {
