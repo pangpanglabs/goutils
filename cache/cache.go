@@ -5,6 +5,10 @@ import (
 	"reflect"
 )
 
+type Cache interface {
+	LoadOrStore(key string, value interface{}, getter func() (interface{}, error)) (loadFromCache bool, err error)
+}
+
 func writeTo(data, dest interface{}) error {
 	value := reflect.ValueOf(dest)
 	if value.Kind() != reflect.Ptr {
