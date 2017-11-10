@@ -42,7 +42,7 @@ func BehaviorLogger(serviceName string, config KafkaConfig) echo.MiddlewareFunc 
 
 			if err = next(c); err != nil {
 				c.Error(err)
-				behaviorLogger.Err = err
+				behaviorLogger.Err = err.Error()
 			}
 
 			res := c.Response()

@@ -1,6 +1,7 @@
 package behaviorlog
 
 import (
+	"errors"
 	"net"
 	"net/http"
 	"net/url"
@@ -41,7 +42,7 @@ type LogContext struct {
 	Body       string                 `json:"body,omitempty"`
 	BizAttr    map[string]interface{} `json:"bizAttr,omitempty"`
 
-	Err error `json:"error,omitempty"`
+	Err string `json:"error,omitempty"`
 }
 
 const (
@@ -161,7 +162,7 @@ func (c *LogContext) WithControllerAndAction(controller, action string) *LogCont
 	return c
 }
 func (c *LogContext) WithError(err error) *LogContext {
-	c.Err = err
+	c.Err = err.Error()
 	return c
 }
 func (c *LogContext) WithBizAttrs(attrs map[string]interface{}) *LogContext {
@@ -212,8 +213,8 @@ func (c *LogContext) Write() {
 		"body":           c.Body,
 		"bizAttr":        c.BizAttr,
 	})
-	if c.Err != nil {
-		logEntry = logEntry.WithError(c.Err)
+	if c.Err != "" {
+		logEntry = logEntry.WithError(errors.New(c.Err))
 	}
 	logEntry.Info()
 }
