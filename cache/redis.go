@@ -12,17 +12,23 @@ import (
 
 var (
 	redisWaitingTime   = time.Second
-	redisExpireTime    = time.Hour * 24
 	redisMaxIdle       = 5
 	errorInvalidScheme = errors.New("invalid Redis database URI scheme")
 )
 
 type Redis struct {
 	*redis.Pool
+	ExpireTime time.Duration
 }
 
-func NewRedis(uri string) *Redis {
-	return &Redis{
+func WithExpireTime(d time.Duration) func(*Redis) {
+	return func(r *Redis) {
+		r.ExpireTime = d
+	}
+}
+
+func NewRedis(uri string, options ...func(*Redis)) *Redis {
+	redis := &Redis{
 		Pool: &redis.Pool{
 			MaxIdle:     redisMaxIdle,
 			IdleTimeout: 240 * time.Second,
@@ -35,6 +41,12 @@ func NewRedis(uri string) *Redis {
 			},
 		},
 	}
+	for _, option := range options {
+		if option != nil {
+			option(redis)
+		}
+	}
+	return redis
 }
 func (r *Redis) LoadOrStore(key string, value interface{}, getter func() (interface{}, error)) (loadFromCache bool, err error) {
 	if err := r.getFromRedis(key, value); err == nil {
@@ -64,7 +76,7 @@ func (r *Redis) setToRedis(k string, v interface{}) {
 	redisConn := r.Get()
 	defer redisConn.Close()
 
-	if err := redisConn.Send("SETEX", k, redisExpireTime.Seconds(), data); err != nil {
+	if err := redisConn.Send("SETEX", k, r.ExpireTime.Seconds(), data); err != nil {
 		logrus.WithError(err).Info("Set To Redis Error")
 	}
 }

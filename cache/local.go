@@ -2,10 +2,14 @@ package cache
 
 import (
 	"sync"
+	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Local struct {
-	m sync.Map
+	m          sync.Map
+	ExpireTime time.Duration
 }
 
 func (c *Local) LoadOrStore(key string, value interface{}, getter func() (interface{}, error)) (loadFromCache bool, err error) {
@@ -23,6 +27,15 @@ func (c *Local) LoadOrStore(key string, value interface{}, getter func() (interf
 	}
 
 	c.m.Store(key, result)
+
+	go func() {
+		if c.ExpireTime > 0 {
+			<-time.After(c.ExpireTime)
+			c.m.Delete(key)
+			logrus.WithField("key", key).Info("DELETE FROM LOCAL CACHE")
+		}
+
+	}()
 
 	if err := writeTo(result, value); err != nil {
 		return false, err
