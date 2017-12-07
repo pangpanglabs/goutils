@@ -42,3 +42,8 @@ func (c *Local) LoadOrStore(key string, value interface{}, getter func() (interf
 	}
 	return false, nil
 }
+
+func (c *Local) Delete(key string) error {
+	c.m.Delete(key)
+	return nil
+}

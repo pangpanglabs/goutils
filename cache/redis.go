@@ -50,6 +50,7 @@ func NewRedis(uri string, options ...func(*Redis)) *Redis {
 	}
 	return redis
 }
+
 func (r *Redis) LoadOrStore(key string, value interface{}, getter func() (interface{}, error)) (loadFromCache bool, err error) {
 	if err := r.getFromRedis(key, value); err == nil {
 		return true, nil
@@ -68,6 +69,18 @@ func (r *Redis) LoadOrStore(key string, value interface{}, getter func() (interf
 	}
 	return false, nil
 }
+
+func (r *Redis) Delete(key string) error {
+	redisConn := r.Get()
+	defer redisConn.Close()
+
+	err := redisConn.Send("DEL", key)
+	if err != nil {
+		logrus.WithField("key", key).WithError(err).Info("Delete From Redis Error")
+	}
+	return err
+}
+
 func (r *Redis) setToRedis(k string, v interface{}) {
 	data, err := json.Marshal(v)
 	if err != nil {
