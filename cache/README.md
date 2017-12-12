@@ -9,27 +9,34 @@ go get -u github.com/pangpanglabs/goutils/cache
 
 Use `cache.Cache` interface type
 ```golang
-var cache cache.Cache
+var mycache cache.Cache
 ```
 
 Create local cache(use `sync.Map` as a cache storage):
 ```golang
-cache = cache.Local{ExpireTime: time.Hour * 24}
+mycache = cache.Local{ExpireTime: time.Hour * 24}
 ```
 
-Create redis cache(default expire time is `time.Hour * 24`):
+Create redis cache
 ```golang
 redisConn := "redis://127.0.0.1:6379"
-cache = cache.NewRedis(redisConn)
+mycache = cache.NewRedis(redisConn)
 ```
+> - default expire time: `time.Hour * 24`
+> - default `Converter`: `JsonConverter`
 
 Or, create redis cache with addiotional options:
 ```golang
 redisConn := "redis://127.0.0.1:6379"
-cache := cache.NewRedis(redisConn, func(redis *cache.Redis) {
-        redis.ExpireTime = time.Hour * 1
-})
+mycache = cache.NewRedis(redisConn,
+        cache.WithExpireTime(time.Hour*3),
+        cache.WithGobConverter(),
+        func(redis *cache.Redis) {
+                // setup additional options
+        },
+)
 ```
+> If you want to use `GobConverter`, you have to identify the concrete type of a value using `gob.Register()` function.
 
 Save to cache:
 ```golang

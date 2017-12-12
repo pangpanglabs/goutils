@@ -1,7 +1,6 @@
 package cache
 
 import (
-	"encoding/json"
 	"errors"
 	"net/url"
 	"time"
@@ -20,11 +19,17 @@ var (
 type Redis struct {
 	*redis.Pool
 	ExpireTime time.Duration
+	Converter  Converter
 }
 
 func WithExpireTime(d time.Duration) func(*Redis) {
 	return func(r *Redis) {
 		r.ExpireTime = d
+	}
+}
+func WithGobConverter() func(*Redis) {
+	return func(r *Redis) {
+		r.Converter = GobConverter{}
 	}
 }
 
@@ -42,6 +47,7 @@ func NewRedis(uri string, options ...func(*Redis)) *Redis {
 			},
 		},
 		ExpireTime: redisExpireTime,
+		Converter:  JsonConverter{},
 	}
 	for _, option := range options {
 		if option != nil {
@@ -82,7 +88,7 @@ func (r *Redis) Delete(key string) error {
 }
 
 func (r *Redis) setToRedis(k string, v interface{}) {
-	data, err := json.Marshal(v)
+	data, err := r.Converter.Encode(v)
 	if err != nil {
 		logrus.WithError(err).Info("Set To Redis Error")
 		return
@@ -107,7 +113,7 @@ func (r *Redis) getFromRedis(k string, v interface{}) error {
 		return err
 	}
 
-	return json.Unmarshal(reply, v)
+	return r.Converter.Decode(reply, v)
 }
 
 func redisConnFromUri(uriString string) (redis.Conn, error) {
