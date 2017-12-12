@@ -82,7 +82,7 @@ func (r *Redis) Delete(key string) error {
 
 	err := redisConn.Send("DEL", key)
 	if err != nil {
-		logrus.WithField("key", key).WithError(err).Info("Delete From Redis Error")
+		logrus.WithField("key", key).WithError(err).Error("Delete From Redis Error")
 	}
 	return err
 }
@@ -90,7 +90,7 @@ func (r *Redis) Delete(key string) error {
 func (r *Redis) setToRedis(k string, v interface{}) {
 	data, err := r.Converter.Encode(v)
 	if err != nil {
-		logrus.WithError(err).Info("Set To Redis Error")
+		logrus.WithError(err).Error("Set To Redis Error")
 		return
 	}
 
@@ -98,7 +98,7 @@ func (r *Redis) setToRedis(k string, v interface{}) {
 	defer redisConn.Close()
 
 	if err := redisConn.Send("SETEX", k, r.ExpireTime.Seconds(), data); err != nil {
-		logrus.WithError(err).Info("Set To Redis Error")
+		logrus.WithError(err).Error("Set To Redis Error")
 	}
 	logrus.WithField("key", k).Info("Set To Redis")
 }
