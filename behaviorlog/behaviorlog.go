@@ -41,6 +41,7 @@ type LogContext struct {
 	Action     string                 `json:"action,omitempty"`
 	Body       string                 `json:"body,omitempty"`
 	BizAttr    map[string]interface{} `json:"bizAttr,omitempty"`
+	Token      string                 `json:"token,omitempty"`
 
 	Err string `json:"error,omitempty"`
 }
@@ -51,6 +52,7 @@ const (
 	HeaderXForwardedFor = "X-Forwarded-For"
 	HeaderXRealIP       = "X-Real-IP"
 	HeaderContentLength = "Content-Length"
+	HeaderAuthorization = "Authorization"
 )
 
 var logger = logrus.New()
@@ -107,6 +109,7 @@ func New(serviceName string, req *http.Request, options ...func(*LogContext)) *L
 		// Controller: controller,
 		// Action:     action,
 		BizAttr: map[string]interface{}{},
+		Token:   getTokenFromHeader(req),
 	}
 
 	for _, o := range options {
@@ -212,6 +215,7 @@ func (c *LogContext) Write() {
 		"action":         c.Action,
 		"body":           c.Body,
 		"bizAttr":        c.BizAttr,
+		"token":          c.Token,
 	})
 	if c.Err != "" {
 		logEntry = logEntry.WithError(errors.New(c.Err))
@@ -223,4 +227,12 @@ func NewNopContext() *LogContext {
 		logger:  logrus.New(),
 		BizAttr: map[string]interface{}{},
 	}
+}
+func getTokenFromHeader(req *http.Request) string {
+	auth := req.Header.Get(HeaderAuthorization)
+	token := ""
+	if strings.HasPrefix(auth, "Bearer ") {
+		token = auth[7:]
+	}
+	return token
 }
