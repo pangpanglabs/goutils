@@ -87,13 +87,33 @@ func (er *echoRouter) getControllerAndAction(c echo.Context) (controller, action
 
 	if controller == "" || action == "" {
 		handlerName := er.routes[fmt.Sprintf("%s+%s", c.Path(), c.Request().Method)]
-		handlerSplitIndex := strings.LastIndex(handlerName, ".")
-		if handlerSplitIndex == -1 || handlerSplitIndex >= len(handlerName) {
-			controller, action = "", handlerName
-		} else {
-			controller, action = handlerName[:handlerSplitIndex], handlerName[handlerSplitIndex+1:]
-		}
+		controller, action = er.convertHandlerNameToControllerAndAction(handlerName)
 	}
+	return
+}
+
+func (echoRouter) convertHandlerNameToControllerAndAction(handlerName string) (controller, action string) {
+	handlerSplitIndex := strings.LastIndex(handlerName, ".")
+	if handlerSplitIndex == -1 || handlerSplitIndex >= len(handlerName) {
+		controller, action = "", handlerName
+	} else {
+		controller, action = handlerName[:handlerSplitIndex], handlerName[handlerSplitIndex+1:]
+	}
+
+	// 1. find this pattern: "(controller)"
+	controller = controller[strings.Index(controller, "(")+1:]
+	if index := strings.Index(controller, ")"); index > 0 {
+		controller = controller[:index]
+	}
+	// 2. remove pointer symbol
+	controller = strings.TrimPrefix(controller, "*")
+	// 3. split by "/"
+	if index := strings.LastIndex(controller, "/"); index > 0 {
+		controller = controller[index+1:]
+	}
+
+	// remove function symbol
+	action = strings.TrimRight(action, ")-fm")
 	return
 }
 
