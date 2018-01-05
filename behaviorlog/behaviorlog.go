@@ -39,7 +39,7 @@ type LogContext struct {
 	Params     interface{}            `json:"params,omitempty"`
 	Controller string                 `json:"controller,omitempty"`
 	Action     string                 `json:"action,omitempty"`
-	Body       string                 `json:"body,omitempty"`
+	Body       interface{}            `json:"body,omitempty"`
 	BizAttr    map[string]interface{} `json:"bizAttr,omitempty"`
 
 	Err string `json:"error,omitempty"`
