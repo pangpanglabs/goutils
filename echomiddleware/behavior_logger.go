@@ -64,21 +64,21 @@ func BehaviorLogger(serviceName string, config KafkaConfig) echo.MiddlewareFunc 
 			behaviorLogger.BytesSent = res.Size
 			behaviorLogger.Controller, behaviorLogger.Action = echoRouter.getControllerAndAction(c)
 			if body != nil {
+				var bodyParam map[string]interface{}
 				d := json.NewDecoder(bytes.NewBuffer(passwordRegex.ReplaceAll(body, []byte(`"$1": "*"`))))
 				d.UseNumber()
-				if err := d.Decode(&behaviorLogger.Body); err != nil {
+				if err := d.Decode(&bodyParam); err != nil {
 					logrus.WithField("body", string(body)).Error("Decode Request Body Error", err)
+				}
+
+				for k, v := range bodyParam {
+					behaviorLogger.Params[k] = v
 				}
 			}
 
-			params := map[string]interface{}{}
-			for k, v := range c.QueryParams() {
-				params[k] = v[0]
-			}
 			for _, name := range c.ParamNames() {
-				params[name] = c.Param(name)
+				behaviorLogger.Params[name] = c.Param(name)
 			}
-			behaviorLogger.Params = params
 
 			behaviorLogger.Write()
 			return

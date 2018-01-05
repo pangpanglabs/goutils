@@ -36,10 +36,9 @@ type LogContext struct {
 	RequestLength int64         `json:"request_length,omitempty"`
 	BytesSent     int64         `json:"bytes_sent,omitempty"`
 
-	Params     interface{}            `json:"params,omitempty"`
+	Params     map[string]interface{} `json:"params,omitempty"`
 	Controller string                 `json:"controller,omitempty"`
 	Action     string                 `json:"action,omitempty"`
-	Body       interface{}            `json:"body,omitempty"`
 	BizAttr    map[string]interface{} `json:"bizAttr,omitempty"`
 
 	Err string `json:"error,omitempty"`
@@ -80,7 +79,7 @@ func New(serviceName string, req *http.Request, options ...func(*LogContext)) *L
 
 	requestLength, _ := strconv.ParseInt(req.Header.Get(HeaderContentLength), 10, 64)
 
-	params := map[string]string{}
+	params := map[string]interface{}{}
 	for k, v := range req.URL.Query() {
 		params[k] = v[0]
 	}
@@ -147,7 +146,6 @@ func (c *LogContext) Clone() *LogContext {
 		Params:         c.Params,
 		Controller:     c.Controller,
 		Action:         c.Action,
-		Body:           c.Body,
 		BizAttr:        map[string]interface{}{},
 	}
 }
@@ -171,10 +169,12 @@ func (c *LogContext) WithBizAttrs(attrs map[string]interface{}) *LogContext {
 	}
 	return c
 }
-func (c *LogContext) WithCallURLInfo(method, uri string, param interface{}, responseStatus int) *LogContext {
+func (c *LogContext) WithCallURLInfo(method, uri string, params map[string]interface{}, responseStatus int) *LogContext {
 	c.Method = method
 	c.Uri = uri
-	c.Params = param
+	for k, v := range params {
+		c.Params[k] = v
+	}
 	c.Status = responseStatus
 	if url, err := url.Parse(uri); err == nil {
 		c.Path = url.Path
@@ -210,7 +210,6 @@ func (c *LogContext) Write() {
 		"params":         c.Params,
 		"controller":     c.Controller,
 		"action":         c.Action,
-		"body":           c.Body,
 		"bizAttr":        c.BizAttr,
 	})
 	if c.Err != "" {
