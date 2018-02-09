@@ -2,7 +2,6 @@ package httpreq
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -22,16 +21,14 @@ func init() {
 		panic(fmt.Sprintf("defaultRoundTripper not an *http.Transport"))
 	}
 	defaultTransport := *defaultTransportPointer
-
-	// http.DefaultMaxIdleConnsPerHost = 2
 	defaultTransport.MaxIdleConnsPerHost = DefaultMaxIdleConnsPerHost
-
 	defaultClient = &http.Client{Transport: &defaultTransport}
 }
 
 type HttpReq struct {
-	req *http.Request
-	err error
+	req      *http.Request
+	dataType reqFormatType
+	err      error
 }
 
 type HttpRespError struct {
@@ -44,10 +41,16 @@ func (e *HttpRespError) Error() string {
 	return fmt.Sprint(e.Status, e.Body)
 }
 
-func New(method, url string, param interface{}) *HttpReq {
+func New(method, url string, param interface{}, dataTypes ...reqFormatType) *HttpReq {
+	var dataType reqFormatType
+	if dataTypes == nil || len(dataTypes) == 0 {
+		dataType = 0
+	} else {
+		dataType = dataTypes[0]
+	}
 	var body io.Reader
 	if param != nil {
-		b, err := json.Marshal(param)
+		b, err := DataTypeFactory{}.New(dataType).marshal(param)
 		if err != nil {
 			return &HttpReq{err: err}
 		}
@@ -58,10 +61,27 @@ func New(method, url string, param interface{}) *HttpReq {
 	if err != nil {
 		return &HttpReq{err: err}
 	}
-	req.Header.Set("Content-Type", "application/json")
 	return &HttpReq{
-		req: req,
+		req:      req,
+		dataType: dataType,
 	}
+}
+
+func (r *HttpReq) WithContentType(contentType string) *HttpReq {
+	if r.err != nil {
+		return r
+	}
+	if r.dataType == 0 {
+		if !(contentType == MIMEApplicationJSON || contentType == MIMEApplicationJSONCharsetUTF8) {
+			r.err = fmt.Errorf("If the Content-Type is not json, the dataTypes parameter in the httpreq.New method is required")
+			return r
+		}
+	}
+	if contentType != "" {
+		r.req.Header.Set("Content-Type", contentType)
+	}
+
+	return r
 }
 
 func (r *HttpReq) WithToken(token string) *HttpReq {
@@ -113,11 +133,33 @@ func (r *HttpReq) WithBehaviorLogContext(logContext *behaviorlog.LogContext) *Ht
 	return r
 }
 func (r *HttpReq) Call(v interface{}) (int, error) {
+	return r.call(v, defaultClient)
+}
+
+func (r *HttpReq) CallWithClient(v interface{}, httpClient *http.Client) (int, error) {
+	return r.call(v, httpClient)
+}
+
+func (r *HttpReq) CallWithTransport(v interface{}, transport *http.Transport) (int, error) {
+	httpClient := &http.Client{Transport: transport}
+	return r.call(v, httpClient)
+}
+
+func (r *HttpReq) SetGlobalTransport(v interface{}, transport *http.Transport) (int, error) {
+	if defaultClient != nil {
+		defaultClient.Transport = transport
+	}
+	return r.call(v, defaultClient)
+}
+
+func (r *HttpReq) call(v interface{}, httpClient *http.Client) (int, error) {
 	if r.err != nil {
 		return 0, r.err
 	}
-
-	resp, err := defaultClient.Do(r.req)
+	if len(r.req.Header.Get("Content-Type")) == 0 {
+		r.req.Header.Set("Content-Type", DataTypeFactory{}.New(r.dataType).head())
+	}
+	resp, err := httpClient.Do(r.req)
 	if err != nil {
 		return 0, err
 	}
@@ -127,11 +169,12 @@ func (r *HttpReq) Call(v interface{}) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-
 	if v != nil {
-		if err := json.Unmarshal(b, &v); err != nil {
+		err = DataTypeFactory{}.New(r.dataType).unMarshal(b, v)
+		if err != nil {
 			return resp.StatusCode, errors.New(string(b))
 		}
 	}
 	return resp.StatusCode, nil
+
 }

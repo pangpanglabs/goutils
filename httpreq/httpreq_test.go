@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
+	"time"
 
 	"github.com/pangpanglabs/goutils/behaviorlog"
 
@@ -79,4 +81,96 @@ func testContext() context.Context {
 		RequestID: "requestID-1",
 		ActionID:  "actionID-1",
 	}).ToCtx(context.Background())
+}
+
+type Fruit struct {
+	Id        int64     `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Code      string    `json:"code"`
+	Name      string    `json:"name"`
+	Color     string    `json:"color"`
+	Price     int64     `json:"price"`
+	StoreCode string    `json:"store_code"`
+}
+
+func Test_Json_Get(t *testing.T) {
+	type ArrayResult struct {
+		TotalCount int64   `json:"totalCount"`
+		Items      []Fruit `json:"items"`
+	}
+	var result struct {
+		Result  ArrayResult `json:"result"`
+		Success bool        `json:"success"`
+		Error   interface{} `json:"error"`
+	}
+	baseUrl := "https://staging.p2shop.cn/fruit/v1/fruits"
+	status, err := httpreq.New(http.MethodGet, baseUrl, nil).Call(&result)
+	fmt.Println(status, result, err)
+	test.Ok(t, err)
+}
+
+func Test_Xml_Put(t *testing.T) {
+	xmlStr := `<xml>
+	<price>34</price>
+	</xml>`
+	baseUrl := "https://staging.p2shop.cn/fruit/v1/fruits/14"
+	status, err := httpreq.New(http.MethodPut, baseUrl, xmlStr, 2).WithContentType(httpreq.MIMEApplicationXMLCharsetUTF8).Call(nil)
+	fmt.Println(err)
+	test.Equals(t, http.StatusNoContent, status)
+	test.Ok(t, err)
+}
+
+func Test_Transport(t *testing.T) {
+	certPathName := fmt.Sprintf("c:/cert/%v/apiclient_cert.pem", os.Getenv("WXPAY_MCHID"))
+	certPathKey := fmt.Sprintf("c:/cert/%v/apiclient_key.pem", os.Getenv("WXPAY_MCHID"))
+	rootCa := fmt.Sprintf("c:/cert/%v/rootca.pem", os.Getenv("WXPAY_MCHID"))
+
+	tport, err := httpreq.CertTransport(certPathName, certPathKey, rootCa)
+	fmt.Println(tport, err)
+	baseUrl := "https://api.mch.weixin.qq.com/secapi/pay/refund"
+	xmlStr := `<xml>
+	<out_refund_no>15802602088494275784251559636</out_refund_no>
+	<total_fee>1</total_fee>
+	<refund_fee>1</refund_fee>
+	<out_trade_no>14201711085205823413229775520</out_trade_no>
+	<sign>DB4C6EBEDF63884C272752476574B50B</sign>
+	<appid>wx856df5e42a345096</appid>
+	<mch_id>1293941701</mch_id>
+	<nonce_str>2820116027603502902</nonce_str>
+   </xml>`
+
+	var respRefundDto struct {
+		ReturnCode string `xml:"return_code,omitempty"`
+		ReturnMsg  string `xml:"return_msg,omitempty"`
+		AppId      string `xml:"appid,omitempty"`
+		SubAppId   string `xml:"sub_appid,omitempty"`
+		MchId      string `xml:"mch_id,omitempty"`
+
+		SubMchId   string `xml:"sub_mch_id,omitempty"`
+		NonceStr   string `xml:"nonce_str,omitempty"`
+		Sign       string `xml:"sign,omitempty"`
+		ResultCode string `xml:"result_code,omitempty"`
+		ErrCode    string `xml:"err_code,omitempty"`
+
+		ErrCodeDes    string `xml:"err_code_des,omitempty"`
+		DeviceInfo    string `xml:"device_info,omitempty"`
+		TransactionId string `xml:"transaction_id,omitempty"`
+		OutRefundNo   string `xml:"out_refund_no,omitempty"`
+		RefundId      string `xml:"refund_id,omitempty"`
+
+		RefundFee            int64  `xml:"refund_fee,omitempty"`            //int64
+		SettlementRefund_Fee int64  `xml:"settlement_refund_fee,omitempty"` //int64
+		TotalFee             int64  `xml:"total_fee,omitempty"`             //int64
+		SettlementTotalFee   int64  `xml:"settlement_total_fee,omitempty"`  //int64
+		FeeType              string `xml:"fee_type,omitempty"`
+
+		OutTradeNo string `xml:"out_trade_no,omitempty"`
+	}
+	status, err := httpreq.New(http.MethodPost, baseUrl, xmlStr, 2).
+		WithContentType(httpreq.MIMEApplicationXMLCharsetUTF8).
+		CallWithTransport(&respRefundDto, tport)
+	fmt.Println(status, respRefundDto, err)
+	test.Ok(t, err)
+	test.Equals(t, http.StatusOK, status)
 }
