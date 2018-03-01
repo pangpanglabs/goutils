@@ -1,8 +1,13 @@
 package echomiddleware
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -13,6 +18,8 @@ import (
 	"github.com/pangpanglabs/goutils/kafka"
 	"github.com/sirupsen/logrus"
 )
+
+var passwordRegex = regexp.MustCompile(`"(password|passwd)":(\s)*"(.*)"`)
 
 func BehaviorLogger(serviceName string, config KafkaConfig) echo.MiddlewareFunc {
 	var producer *kafka.Producer
@@ -32,8 +39,14 @@ func BehaviorLogger(serviceName string, config KafkaConfig) echo.MiddlewareFunc 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
 			req := c.Request()
-			// fmt.Println("req.RequestURI:", req.RequestURI)
-			// fmt.Println("req.Host:", req.Host)
+
+			var body []byte
+			if req.Method == http.MethodPost || req.Method == http.MethodPut || req.Method == http.MethodPatch {
+				body, _ = ioutil.ReadAll(req.Body)
+				req.Body.Close()
+				req.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+			}
+
 			behaviorLogger := behaviorlog.New(serviceName, req, behaviorlog.KafkaProducer(producer))
 
 			c.SetRequest(req.WithContext(context.WithValue(req.Context(),
@@ -50,6 +63,13 @@ func BehaviorLogger(serviceName string, config KafkaConfig) echo.MiddlewareFunc 
 			behaviorLogger.Status = res.Status
 			behaviorLogger.BytesSent = res.Size
 			behaviorLogger.Controller, behaviorLogger.Action = echoRouter.getControllerAndAction(c)
+			if body != nil {
+				d := json.NewDecoder(bytes.NewBuffer(passwordRegex.ReplaceAll(body, []byte(`"$1": "*"`))))
+				d.UseNumber()
+				if err := d.Decode(&behaviorLogger.Body); err != nil {
+					logrus.WithField("body", string(body)).Error("Decode Request Body Error", err)
+				}
+			}
 
 			params := map[string]interface{}{}
 			for k, v := range c.QueryParams() {
