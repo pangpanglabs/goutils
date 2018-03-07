@@ -10,12 +10,13 @@ import (
 	"net/http"
 )
 
-type reqFormatType int
+type formatType int
 
 const (
-	JsonType reqFormatType = iota //0
-	FormType                      //1
-	XmlType                       //2
+	JsonType      formatType = iota //0
+	FormType                        //1
+	XmlType                         //2
+	ByteArrayType                   //3
 )
 
 const (
@@ -51,7 +52,7 @@ type reqFormatter interface {
 type DataTypeFactory struct {
 }
 
-func (DataTypeFactory) New(dataType reqFormatType) reqFormatter {
+func (DataTypeFactory) New(dataType formatType) reqFormatter {
 	switch dataType {
 	case XmlType:
 		return XmlFormat{}
@@ -59,6 +60,8 @@ func (DataTypeFactory) New(dataType reqFormatType) reqFormatter {
 		return FormFormat{}
 	case JsonType:
 		return JsonFormat{}
+	case ByteArrayType:
+		return ByteArrayFormat{}
 	default:
 		panic("dataType only supports xml,form,json")
 	}
@@ -119,6 +122,24 @@ func (FormFormat) unMarshal(data []byte, v interface{}) error {
 	if err := json.Unmarshal(data, v); err != nil {
 		return errors.New(string(data))
 	}
+	return nil
+}
+
+type ByteArrayFormat struct {
+}
+
+func (ByteArrayFormat) marshal(param interface{}) ([]byte, error) {
+	paramData, ok := param.([]byte)
+	if !ok {
+		return nil, errors.New("param is expected to []byte. ")
+	}
+	return paramData, nil
+}
+func (ByteArrayFormat) head() string {
+	return "application/x-www-form-urlencoded" + "; " + "charset=UTF-8"
+}
+func (ByteArrayFormat) unMarshal(data []byte, v interface{}) error {
+	v = data
 	return nil
 }
 

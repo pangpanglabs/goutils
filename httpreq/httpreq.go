@@ -26,9 +26,10 @@ func init() {
 }
 
 type HttpReq struct {
-	req      *http.Request
-	dataType reqFormatType
-	err      error
+	req          *http.Request
+	reqDataType  formatType
+	respDataType formatType
+	err          error
 }
 
 type HttpRespError struct {
@@ -41,16 +42,20 @@ func (e *HttpRespError) Error() string {
 	return fmt.Sprint(e.Status, e.Body)
 }
 
-func New(method, url string, param interface{}, dataTypes ...reqFormatType) *HttpReq {
-	var dataType reqFormatType
-	if dataTypes == nil || len(dataTypes) == 0 {
-		dataType = 0
-	} else {
-		dataType = dataTypes[0]
+func New(method, url string, param interface{}, dataTypes ...formatType) *HttpReq {
+	var reqDataType, respDataType formatType
+	if dataTypes != nil {
+		if len(dataTypes) >= 1 {
+			reqDataType = dataTypes[0]
+			respDataType = dataTypes[0]
+		}
+		if len(dataTypes) == 2 {
+			respDataType = dataTypes[1]
+		}
 	}
 	var body io.Reader
 	if param != nil {
-		b, err := DataTypeFactory{}.New(dataType).marshal(param)
+		b, err := DataTypeFactory{}.New(reqDataType).marshal(param)
 		if err != nil {
 			return &HttpReq{err: err}
 		}
@@ -61,9 +66,11 @@ func New(method, url string, param interface{}, dataTypes ...reqFormatType) *Htt
 	if err != nil {
 		return &HttpReq{err: err}
 	}
+
 	return &HttpReq{
-		req:      req,
-		dataType: dataType,
+		req:          req,
+		reqDataType:  reqDataType,
+		respDataType: respDataType,
 	}
 }
 
@@ -71,7 +78,7 @@ func (r *HttpReq) WithContentType(contentType string) *HttpReq {
 	if r.err != nil {
 		return r
 	}
-	if r.dataType == 0 {
+	if r.reqDataType == 0 {
 		if !(contentType == MIMEApplicationJSON || contentType == MIMEApplicationJSONCharsetUTF8) {
 			r.err = fmt.Errorf("If the Content-Type is not json, the dataTypes parameter in the httpreq.New method is required")
 			return r
@@ -157,7 +164,7 @@ func (r *HttpReq) call(v interface{}, httpClient *http.Client) (int, error) {
 		return 0, r.err
 	}
 	if len(r.req.Header.Get("Content-Type")) == 0 {
-		r.req.Header.Set("Content-Type", DataTypeFactory{}.New(r.dataType).head())
+		r.req.Header.Set("Content-Type", DataTypeFactory{}.New(r.reqDataType).head())
 	}
 	resp, err := httpClient.Do(r.req)
 	if err != nil {
@@ -170,7 +177,7 @@ func (r *HttpReq) call(v interface{}, httpClient *http.Client) (int, error) {
 		return 0, err
 	}
 	if v != nil {
-		err = DataTypeFactory{}.New(r.dataType).unMarshal(b, v)
+		err = DataTypeFactory{}.New(r.respDataType).unMarshal(b, v)
 		if err != nil {
 			return resp.StatusCode, errors.New(string(b))
 		}
