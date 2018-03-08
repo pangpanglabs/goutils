@@ -18,3 +18,15 @@ statusCode, err := httpreq.New(http.MethodPost, s.URL, body).
 	WithBehaviorLogContext(behaviorlog.FromCtx(ctx)).
 	Call(&v)
 ```
+
+```golang
+var v ApiResult
+statusCode, err := httpreq.New(http.MethodPost, s.URL, body,httpreq.XmlType).
+	Call(&v)
+```
+
+```golang
+var v ApiResult
+statusCode, err := httpreq.New(http.MethodPost, s.URL, body,httpreq.JsonType,httpreq.XmlType).
+	Call(&v)
+```

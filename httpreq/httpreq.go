@@ -42,6 +42,13 @@ func (e *HttpRespError) Error() string {
 	return fmt.Sprint(e.Status, e.Body)
 }
 
+/*
+if dataTypes's length is 1,then
+  request and response data type is dataTypes[0]
+if dataTypes's length is 2,then
+  request data type is dataTypes[0]
+  response data type is dataTypes[1]
+*/
 func New(method, url string, param interface{}, dataTypes ...formatType) *HttpReq {
 	var reqDataType, respDataType formatType
 	if dataTypes != nil {
