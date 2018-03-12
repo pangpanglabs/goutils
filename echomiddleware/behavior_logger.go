@@ -41,7 +41,7 @@ func BehaviorLogger(serviceName string, config KafkaConfig) echo.MiddlewareFunc 
 			req := c.Request()
 
 			var body []byte
-			if req.Method == http.MethodPost || req.Method == http.MethodPut || req.Method == http.MethodPatch {
+			if shouldWriteBodyLog(req) {
 				body, _ = ioutil.ReadAll(req.Body)
 				req.Body.Close()
 				req.Body = ioutil.NopCloser(bytes.NewBuffer(body))
@@ -84,6 +84,24 @@ func BehaviorLogger(serviceName string, config KafkaConfig) echo.MiddlewareFunc 
 			return
 		}
 	}
+}
+
+func shouldWriteBodyLog(req *http.Request) bool {
+	if req.Method != http.MethodPost &&
+		req.Method != http.MethodPut &&
+		req.Method != http.MethodPatch &&
+		req.Method != http.MethodDelete {
+		return false
+	}
+
+	contentType := req.Header.Get(echo.HeaderContentType)
+	if contentType != echo.MIMEApplicationJSON &&
+		contentType != echo.MIMEApplicationJSONCharsetUTF8 {
+		return false
+	}
+
+	return true
+
 }
 
 type echoRouter struct {
