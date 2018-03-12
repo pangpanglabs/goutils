@@ -139,7 +139,11 @@ func (ByteArrayFormat) head() string {
 	return "application/x-www-form-urlencoded" + "; " + "charset=UTF-8"
 }
 func (ByteArrayFormat) unMarshal(data []byte, v interface{}) error {
-	v = data
+	rawData, ok := v.(*[]byte)
+	if !ok {
+		return errors.New("param is expected to *[]byte. ")
+	}
+	*rawData = append(*rawData, data...)
 	return nil
 }
 

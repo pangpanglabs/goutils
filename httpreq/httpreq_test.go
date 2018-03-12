@@ -3,12 +3,13 @@ package httpreq_test
 import (
 	"context"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
-	"time"
 
 	"github.com/pangpanglabs/goutils/behaviorlog"
 
@@ -76,6 +77,127 @@ func TestHttpreq(t *testing.T) {
 	})
 }
 
+func TestParamJson(t *testing.T) {
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		keys, ok := r.URL.Query()["maxResultCount"]
+		if !ok || len(keys) < 1 {
+			log.Println("Url Param 'maxResultCount' is missing")
+			return
+		}
+		test.Equals(t, "2", keys[0])
+		response, _ := json.Marshal(map[string]interface{}{
+			"success": true,
+			"result":  keys[0],
+			"error":   nil,
+		})
+		fmt.Fprint(w, string(response))
+		return
+	}))
+	defer s.Close()
+
+	type ApiResult struct {
+		Result  interface{} `json:"result"`
+		Success bool        `json:"success"`
+		Error   struct {
+			Code    int         `json:"code,omitempty"`
+			Details interface{} `json:"details,omitempty"`
+			Message string      `json:"message,omitempty"`
+		} `json:"error"`
+	}
+
+	t.Run("GET", func(t *testing.T) {
+		var v ApiResult
+		url := s.URL + "?maxResultCount=2"
+		statusCode, err := httpreq.New(http.MethodGet, url, nil).
+			Call(&v)
+		test.Ok(t, err)
+		test.Equals(t, statusCode, 200)
+		test.Equals(t, v.Result, "2")
+	})
+
+}
+
+func TestParamXml(t *testing.T) {
+	type Fruit struct {
+		Price int64 `xml:"price"`
+	}
+	type ApiResult struct {
+		XMLName xml.Name `xml:"xml"`
+		Result  int64    `xml:"result"`
+		Success bool     `xml:"success"`
+		Error   struct {
+			Code    int         `xml:"code,omitempty"`
+			Details interface{} `xml:"details,omitempty"`
+			Message string      `xml:"message,omitempty"`
+		} `xml:"error"`
+	}
+
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b, err := ioutil.ReadAll(r.Body)
+		defer r.Body.Close()
+		if err != nil {
+			fmt.Fprintf(w, returnXmlError(err.Error()))
+			return
+		}
+		var f Fruit
+		err = xml.Unmarshal(b, &f)
+		if err != nil {
+			fmt.Fprintf(w, returnXmlError(err.Error()))
+			return
+		}
+		test.Equals(t, int64(34), f.Price)
+		response, _ := xml.Marshal(&ApiResult{
+			Success: true,
+			Result:  f.Price,
+			Error: struct {
+				Code    int         `xml:"code,omitempty"`
+				Details interface{} `xml:"details,omitempty"`
+				Message string      `xml:"message,omitempty"`
+			}{0, nil, ""},
+		})
+		fmt.Fprintf(w, string(response))
+		return
+	}))
+	defer s.Close()
+
+	t.Run("POST", func(t *testing.T) {
+		xmlStr := `<xml>
+		<price>34</price>
+		</xml>`
+		var v ApiResult
+		statusCode, err := httpreq.New(http.MethodPost, s.URL, xmlStr, httpreq.XmlType).
+			Call(&v)
+		fmt.Println(v)
+		test.Ok(t, err)
+		test.Equals(t, statusCode, 200)
+		test.Equals(t, int64(34), v.Result)
+	})
+
+}
+
+func TestRequestXml_ResponseByteArray(t *testing.T) {
+	type ApiResult struct {
+		XMLName xml.Name    `xml:"xml"`
+		Result  int64       `xml:"result"`
+		Success bool        `xml:"success"`
+		Error   interface{} `xml:"error"`
+	}
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "<xml><result>34</result><success>true</success></xml>")
+		return
+	}))
+	defer s.Close()
+
+	t.Run("POST", func(t *testing.T) {
+		var v []byte
+		statusCode, err := httpreq.New(http.MethodPost, s.URL, nil, httpreq.XmlType, httpreq.ByteArrayType).
+			Call(&v)
+		test.Ok(t, err)
+		test.Equals(t, statusCode, 200)
+		test.Equals(t, "<xml><result>34</result><success>true</success></xml>", string(v))
+	})
+}
+
 func testContext() context.Context {
 	return (&behaviorlog.LogContext{
 		RequestID: "requestID-1",
@@ -83,94 +205,21 @@ func testContext() context.Context {
 	}).ToCtx(context.Background())
 }
 
-type Fruit struct {
-	Id        int64     `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Code      string    `json:"code"`
-	Name      string    `json:"name"`
-	Color     string    `json:"color"`
-	Price     int64     `json:"price"`
-	StoreCode string    `json:"store_code"`
-}
-
-func Test_Json_Get(t *testing.T) {
-	type ArrayResult struct {
-		TotalCount int64   `json:"totalCount"`
-		Items      []Fruit `json:"items"`
+func returnXmlError(errStr string) string {
+	type ApiResult struct {
+		XMLName xml.Name    `xml:"xml"`
+		Result  int64       `xml:"result"`
+		Success bool        `xml:"success"`
+		Error   interface{} `xml:"error"`
 	}
-	var result struct {
-		Result  ArrayResult `json:"result"`
-		Success bool        `json:"success"`
-		Error   interface{} `json:"error"`
-	}
-	baseUrl := "https://staging.p2shop.cn/fruit/v1/fruits"
-	status, err := httpreq.New(http.MethodGet, baseUrl, nil).Call(&result)
-	fmt.Println(status, result, err)
-	test.Ok(t, err)
-}
-
-func Test_Xml_Put(t *testing.T) {
-	xmlStr := `<xml>
-	<price>34</price>
-	</xml>`
-	baseUrl := "https://staging.p2shop.cn/fruit/v1/fruits/14"
-	status, err := httpreq.New(http.MethodPut, baseUrl, xmlStr, 2).WithContentType(httpreq.MIMEApplicationXMLCharsetUTF8).Call(nil)
-	fmt.Println(err)
-	test.Equals(t, http.StatusNoContent, status)
-	test.Ok(t, err)
-}
-
-func Test_Transport(t *testing.T) {
-	certPathName := fmt.Sprintf("c:/cert/%v/apiclient_cert.pem", os.Getenv("WXPAY_MCHID"))
-	certPathKey := fmt.Sprintf("c:/cert/%v/apiclient_key.pem", os.Getenv("WXPAY_MCHID"))
-	rootCa := fmt.Sprintf("c:/cert/%v/rootca.pem", os.Getenv("WXPAY_MCHID"))
-
-	tport, err := httpreq.CertTransport(certPathName, certPathKey, rootCa)
-	fmt.Println(tport, err)
-	baseUrl := "https://api.mch.weixin.qq.com/secapi/pay/refund"
-	xmlStr := `<xml>
-	<out_refund_no>15802602088494275784251559636</out_refund_no>
-	<total_fee>1</total_fee>
-	<refund_fee>1</refund_fee>
-	<out_trade_no>14201711085205823413229775520</out_trade_no>
-	<sign>DB4C6EBEDF63884C272752476574B50B</sign>
-	<appid>wx856df5e42a345096</appid>
-	<mch_id>1293941701</mch_id>
-	<nonce_str>2820116027603502902</nonce_str>
-   </xml>`
-
-	var respRefundDto struct {
-		ReturnCode string `xml:"return_code,omitempty"`
-		ReturnMsg  string `xml:"return_msg,omitempty"`
-		AppId      string `xml:"appid,omitempty"`
-		SubAppId   string `xml:"sub_appid,omitempty"`
-		MchId      string `xml:"mch_id,omitempty"`
-
-		SubMchId   string `xml:"sub_mch_id,omitempty"`
-		NonceStr   string `xml:"nonce_str,omitempty"`
-		Sign       string `xml:"sign,omitempty"`
-		ResultCode string `xml:"result_code,omitempty"`
-		ErrCode    string `xml:"err_code,omitempty"`
-
-		ErrCodeDes    string `xml:"err_code_des,omitempty"`
-		DeviceInfo    string `xml:"device_info,omitempty"`
-		TransactionId string `xml:"transaction_id,omitempty"`
-		OutRefundNo   string `xml:"out_refund_no,omitempty"`
-		RefundId      string `xml:"refund_id,omitempty"`
-
-		RefundFee            int64  `xml:"refund_fee,omitempty"`            //int64
-		SettlementRefund_Fee int64  `xml:"settlement_refund_fee,omitempty"` //int64
-		TotalFee             int64  `xml:"total_fee,omitempty"`             //int64
-		SettlementTotalFee   int64  `xml:"settlement_total_fee,omitempty"`  //int64
-		FeeType              string `xml:"fee_type,omitempty"`
-
-		OutTradeNo string `xml:"out_trade_no,omitempty"`
-	}
-	status, err := httpreq.New(http.MethodPost, baseUrl, xmlStr, 2).
-		WithContentType(httpreq.MIMEApplicationXMLCharsetUTF8).
-		CallWithTransport(&respRefundDto, tport)
-	fmt.Println(status, respRefundDto, err)
-	test.Ok(t, err)
-	test.Equals(t, http.StatusOK, status)
+	errMsg, _ := xml.Marshal(&ApiResult{
+		Success: false,
+		Result:  0,
+		Error: struct {
+			Code    int         `xml:"code,omitempty"`
+			Details interface{} `xml:"details,omitempty"`
+			Message string      `xml:"message,omitempty"`
+		}{0, nil, errStr},
+	})
+	return string(errMsg)
 }
