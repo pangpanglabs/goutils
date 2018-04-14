@@ -40,6 +40,7 @@ type LogContext struct {
 	Controller string                 `json:"controller,omitempty"`
 	Action     string                 `json:"action,omitempty"`
 	BizAttr    map[string]interface{} `json:"bizAttr,omitempty"`
+	Username   string                 `json:"username,omitempty"`
 
 	Err string `json:"error,omitempty"`
 }
