@@ -4,10 +4,11 @@ import (
 	"context"
 	"log"
 	"net/http"
-
 	"time"
 
 	"github.com/Shopify/sarama"
+	"github.com/pangpanglabs/goutils/behaviorlog"
+
 	"github.com/go-xorm/core"
 	"github.com/go-xorm/xorm"
 	"github.com/labstack/echo"
@@ -33,13 +34,20 @@ func ContextDB(service string, db *xorm.Engine, kafkaConfig KafkaConfig) echo.Mi
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			req := c.Request()
+
+			session := db.NewSession()
+			defer session.Close()
+
+			func(session interface{}, ctx context.Context) {
+				if s, ok := session.(interface{ SetContext(context.Context) }); ok {
+					s.SetContext(ctx)
+				}
+			}(session, req.Context())
+
+			c.SetRequest(req.WithContext(context.WithValue(req.Context(), ContextDBName, session)))
+
 			switch req.Method {
 			case "POST", "PUT", "DELETE":
-				session := db.NewSession()
-				defer session.Close()
-
-				c.SetRequest(req.WithContext(context.WithValue(req.Context(), ContextDBName, session)))
-
 				if err := session.Begin(); err != nil {
 					log.Println(err)
 				}
@@ -55,7 +63,6 @@ func ContextDB(service string, db *xorm.Engine, kafkaConfig KafkaConfig) echo.Mi
 					return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 				}
 			default:
-				c.SetRequest(req.WithContext(context.WithValue(req.Context(), ContextDBName, db)))
 				return next(c)
 			}
 
@@ -64,26 +71,42 @@ func ContextDB(service string, db *xorm.Engine, kafkaConfig KafkaConfig) echo.Mi
 	}
 }
 
+type SqlLog struct {
+	Service   string      `json:"service,omitempty"`
+	RequestID string      `json:"requestId,omitempty"`
+	ActionID  string      `json:"actionId,omitempty"`
+	Sql       interface{} `json:"sql,omitempty"`
+	Args      interface{} `json:"args,omitempty"`
+	Took      interface{} `json:"took,omitempty"`
+}
 type dbLogger struct {
 	serviceName string
 	*kafka.Producer
 }
 
 func (logger *dbLogger) Write(v []interface{}) {
-	if len(v) == 3 {
-		logger.Send(map[string]interface{}{
-			"service": logger.serviceName,
-			"sql":     v[0],
-			"args":    v[1],
-			"took":    v[2],
-		})
-	} else if len(v) == 2 {
-		logger.Send(map[string]interface{}{
-			"service": logger.serviceName,
-			"sql":     v[0],
-			"took":    v[1],
-		})
+	if len(v) == 0 {
+		return
 	}
+	log := SqlLog{
+		Service: logger.serviceName,
+		Sql:     v[0],
+	}
+	if ctx, ok := v[len(v)-1].(context.Context); ok {
+		if logContext := behaviorlog.FromCtx(ctx); logContext != nil {
+			log.ActionID = logContext.ActionID
+			log.RequestID = logContext.RequestID
+		}
+		v = v[:len(v)-1]
+	}
+
+	if len(v) == 3 {
+		log.Args = v[1]
+		log.Took = v[2]
+	} else if len(v) == 2 {
+		log.Took = v[1]
+	}
+	logger.Send(&log)
 }
 func (logger *dbLogger) Infof(format string, v ...interface{})  { logger.Write(v) }
 func (logger *dbLogger) Errorf(format string, v ...interface{}) {}
