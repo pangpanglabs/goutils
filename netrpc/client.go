@@ -1,4 +1,4 @@
-package netprc
+package netrpc
 
 import (
 	"log"
