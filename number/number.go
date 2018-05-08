@@ -1,6 +1,11 @@
 package number
 
-import "math"
+import (
+	"fmt"
+	"math"
+	"strconv"
+	"strings"
+)
 
 type Setting struct {
 	RoundDigit    int
@@ -26,9 +31,32 @@ func ToFixed(num float64, setting *Setting) float64 {
 	case "floor", "Floor":
 		output := math.Pow(10, float64(setting.RoundDigit))
 		return math.Floor(num*output) / output
-	default:
+	case "round", "Round":
 		output := math.Pow(10, float64(setting.RoundDigit))
 		return float64(Round(num*output)) / output
+	default: // BankRound
+		s := fmt.Sprint(num)                      // "2.1965"
+		pointPos := strings.Index(s, ".")         // 1
+		roundPos := pointPos + setting.RoundDigit // 3
+
+		if pointPos < 0 || roundPos+1 >= len(s) {
+			return num
+		}
+
+		intNum, _ := strconv.ParseInt(s[:pointPos]+s[pointPos+1:roundPos+1], 10, 64) // 219
+
+		switch s[roundPos] {
+		case '0', '2', '4', '6', '8':
+			if s[roundPos+1] >= '5' {
+				intNum += 1
+			}
+		default:
+			if s[roundPos+1] > '5' {
+				intNum += 1
+			}
+		}
+
+		return float64(intNum) / math.Pow(10, float64(setting.RoundDigit))
 	}
 }
 
