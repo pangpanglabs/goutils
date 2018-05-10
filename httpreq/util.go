@@ -83,7 +83,7 @@ func (XmlFormat) head() string {
 }
 func (XmlFormat) unMarshal(data []byte, v interface{}) error {
 	if err := xml.Unmarshal(data, v); err != nil {
-		return errors.New(string(data))
+		return err
 	}
 	return nil
 }
@@ -99,7 +99,7 @@ func (JsonFormat) head() string {
 }
 func (JsonFormat) unMarshal(data []byte, v interface{}) error {
 	if err := json.Unmarshal(data, v); err != nil {
-		return errors.New(string(data))
+		return err
 	}
 	return nil
 }
@@ -120,7 +120,7 @@ func (FormFormat) head() string {
 }
 func (FormFormat) unMarshal(data []byte, v interface{}) error {
 	if err := json.Unmarshal(data, v); err != nil {
-		return errors.New(string(data))
+		return err
 	}
 	return nil
 }

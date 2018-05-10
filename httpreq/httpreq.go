@@ -2,7 +2,6 @@ package httpreq
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -185,9 +184,8 @@ func (r *HttpReq) call(v interface{}, httpClient *http.Client) (int, error) {
 		return 0, err
 	}
 	if v != nil {
-		err = DataTypeFactory{}.New(r.respDataType).unMarshal(b, v)
-		if err != nil {
-			return resp.StatusCode, errors.New(string(b))
+		if err := (DataTypeFactory{}).New(r.respDataType).unMarshal(b, v); err != nil {
+			return resp.StatusCode, err
 		}
 	}
 	return resp.StatusCode, nil
