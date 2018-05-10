@@ -143,6 +143,7 @@ func (r *HttpReq) WithBehaviorLogContext(logContext *behaviorlog.LogContext) *Ht
 
 	r = r.WithRequestID(logContext.RequestID)
 	r = r.WithActionID(logContext.ActionID)
+	r = r.WithToken(logContext.AuthToken)
 
 	return r
 }

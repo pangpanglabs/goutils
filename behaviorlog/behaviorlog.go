@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labstack/echo"
 	"github.com/labstack/gommon/random"
 	"github.com/pangpanglabs/goutils/kafka"
 	"github.com/sirupsen/logrus"
@@ -41,6 +42,7 @@ type LogContext struct {
 	Action     string                 `json:"action,omitempty"`
 	BizAttr    map[string]interface{} `json:"bizAttr,omitempty"`
 	Username   string                 `json:"username,omitempty"`
+	AuthToken  string                 `json:"-"`
 
 	Err string `json:"error,omitempty"`
 }
@@ -106,7 +108,8 @@ func New(serviceName string, req *http.Request, options ...func(*LogContext)) *L
 		RequestLength: requestLength,
 		// Controller: controller,
 		// Action:     action,
-		BizAttr: map[string]interface{}{},
+		BizAttr:   map[string]interface{}{},
+		AuthToken: req.Header.Get(echo.HeaderAuthorization),
 	}
 
 	for _, o := range options {
@@ -148,6 +151,7 @@ func (c *LogContext) Clone() *LogContext {
 		Controller:     c.Controller,
 		Action:         c.Action,
 		BizAttr:        map[string]interface{}{},
+		AuthToken:      c.AuthToken,
 	}
 }
 

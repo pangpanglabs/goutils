@@ -93,7 +93,7 @@ func BehaviorLogger(serviceName string, config KafkaConfig) echo.MiddlewareFunc 
 				behaviorLogger.Params[name] = c.Param(name)
 			}
 
-			behaviorLogger.Username = getUsernameFromJwtToken(req.Header.Get(echo.HeaderAuthorization))
+			behaviorLogger.Username = getUsernameFromJwtToken(behaviorLogger.AuthToken)
 
 			behaviorLogger.Write()
 			return
