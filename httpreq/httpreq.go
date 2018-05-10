@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/pangpanglabs/goutils/behaviorlog"
 )
@@ -103,7 +104,10 @@ func (r *HttpReq) WithToken(token string) *HttpReq {
 	}
 
 	if token != "" {
-		r.req.Header.Set("Authorization", "Bearer "+token)
+		if !strings.HasPrefix(token, "Bearer ") {
+			token = "Bearer " + token
+		}
+		r.req.Header.Set("Authorization", token)
 	}
 
 	return r
