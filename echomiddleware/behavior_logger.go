@@ -34,7 +34,7 @@ func init() {
 	}
 }
 
-func BehaviorLogger(serviceName string, config KafkaConfig) echo.MiddlewareFunc {
+func BehaviorLogger(serviceName string, config KafkaConfig, options ...func(*behaviorlog.LogContext)) echo.MiddlewareFunc {
 	var producer *kafka.Producer
 	if p, err := kafka.NewProducer(config.Brokers, config.Topic, func(c *sarama.Config) {
 		c.Producer.RequiredAcks = sarama.WaitForLocal       // Only wait for the leader to ack
@@ -52,15 +52,18 @@ func BehaviorLogger(serviceName string, config KafkaConfig) echo.MiddlewareFunc 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) (err error) {
 			req := c.Request()
-
+			behaviorLogger := behaviorlog.New(serviceName, req, behaviorlog.KafkaProducer(producer))
+			if len(options) >= 0 {
+				for _, option := range options {
+					option(behaviorLogger)
+				}
+			}
 			var body []byte
-			if shouldWriteBodyLog(req) {
+			if shouldWriteBodyLog(req, behaviorLogger) {
 				body, _ = ioutil.ReadAll(req.Body)
 				req.Body.Close()
 				req.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 			}
-
-			behaviorLogger := behaviorlog.New(serviceName, req, behaviorlog.KafkaProducer(producer))
 
 			c.SetRequest(req.WithContext(context.WithValue(req.Context(),
 				behaviorlog.LogContextName, behaviorLogger,
@@ -133,7 +136,10 @@ func getUsernameFromJwtToken(auth string) string {
 
 	return ""
 }
-func shouldWriteBodyLog(req *http.Request) bool {
+func shouldWriteBodyLog(req *http.Request, logContext *behaviorlog.LogContext) bool {
+	if logContext != nil && logContext.BodyHide {
+		return false
+	}
 	if req.Method != http.MethodPost &&
 		req.Method != http.MethodPut &&
 		req.Method != http.MethodPatch &&
