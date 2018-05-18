@@ -44,7 +44,8 @@ type LogContext struct {
 	Username   string                 `json:"username,omitempty"`
 	AuthToken  string                 `json:"-"`
 
-	Err string `json:"error,omitempty"`
+	Err      string `json:"error,omitempty"`
+	BodyHide bool   `json:"bodyHide,omitempty"`
 }
 
 const (
