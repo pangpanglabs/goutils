@@ -25,10 +25,12 @@ func init() {
 	defaultClient = &http.Client{Transport: &defaultTransport}
 }
 
+type OptionFunc func(*HttpReq) error
+
 type HttpReq struct {
-	req          *http.Request
-	reqDataType  formatType
-	respDataType formatType
+	Req          *http.Request
+	ReqDataType  formatType
+	RespDataType formatType
 	err          error
 }
 
@@ -42,60 +44,30 @@ func (e *HttpRespError) Error() string {
 	return fmt.Sprint(e.Status, e.Body)
 }
 
-/*
-if dataTypes's length is 1,then
-  request and response data type is dataTypes[0]
-if dataTypes's length is 2,then
-  request data type is dataTypes[0]
-  response data type is dataTypes[1]
-*/
-func New(method, url string, param interface{}, dataTypes ...formatType) *HttpReq {
-	var reqDataType, respDataType formatType
-	if dataTypes != nil {
-		if len(dataTypes) >= 1 {
-			reqDataType = dataTypes[0]
-			respDataType = dataTypes[0]
+func New(method, url string, param interface{}, options ...OptionFunc) *HttpReq {
+	httpReq := &HttpReq{}
+	for _, option := range options {
+		if option == nil {
+			continue
 		}
-		if len(dataTypes) == 2 {
-			respDataType = dataTypes[1]
+		httpReq.err = option(httpReq)
+		if httpReq.err != nil {
+			return httpReq
 		}
 	}
 	var body io.Reader
 	if param != nil {
-		b, err := DataTypeFactory{}.New(reqDataType).marshal(param)
+		b, err := DataTypeFactory{}.New(httpReq.ReqDataType).marshal(param)
 		if err != nil {
 			return &HttpReq{err: err}
 		}
 		body = bytes.NewBuffer(b)
 	}
-
-	req, err := http.NewRequest(method, url, body)
-	if err != nil {
-		return &HttpReq{err: err}
+	httpReq.Req, httpReq.err = http.NewRequest(method, url, body)
+	if httpReq.err != nil {
+		return httpReq
 	}
-
-	return &HttpReq{
-		req:          req,
-		reqDataType:  reqDataType,
-		respDataType: respDataType,
-	}
-}
-
-func (r *HttpReq) WithContentType(contentType string) *HttpReq {
-	if r.err != nil {
-		return r
-	}
-	if r.reqDataType == 0 {
-		if !(contentType == MIMEApplicationJSON || contentType == MIMEApplicationJSONCharsetUTF8) {
-			r.err = fmt.Errorf("If the Content-Type is not json, the dataTypes parameter in the httpreq.New method is required")
-			return r
-		}
-	}
-	if contentType != "" {
-		r.req.Header.Set("Content-Type", contentType)
-	}
-
-	return r
+	return httpReq
 }
 
 func (r *HttpReq) WithToken(token string) *HttpReq {
@@ -107,7 +79,7 @@ func (r *HttpReq) WithToken(token string) *HttpReq {
 		if !strings.HasPrefix(token, "Bearer ") {
 			token = "Bearer " + token
 		}
-		r.req.Header.Set("Authorization", token)
+		r.Req.Header.Set("Authorization", token)
 	}
 
 	return r
@@ -119,7 +91,7 @@ func (r *HttpReq) WithRequestID(requestID string) *HttpReq {
 	}
 
 	if requestID != "" {
-		r.req.Header.Set(behaviorlog.HeaderXRequestID, requestID)
+		r.Req.Header.Set(behaviorlog.HeaderXRequestID, requestID)
 	}
 
 	return r
@@ -130,7 +102,7 @@ func (r *HttpReq) WithActionID(actionID string) *HttpReq {
 	}
 
 	if actionID != "" {
-		r.req.Header.Set(behaviorlog.HeaderXActionID, actionID)
+		r.Req.Header.Set(behaviorlog.HeaderXActionID, actionID)
 	}
 
 	return r
@@ -174,10 +146,10 @@ func (r *HttpReq) call(v interface{}, httpClient *http.Client) (int, error) {
 	if r.err != nil {
 		return 0, r.err
 	}
-	if len(r.req.Header.Get("Content-Type")) == 0 {
-		r.req.Header.Set("Content-Type", DataTypeFactory{}.New(r.reqDataType).head())
+	if len(r.Req.Header.Get("Content-Type")) == 0 {
+		r.Req.Header.Set("Content-Type", DataTypeFactory{}.New(r.ReqDataType).contentType())
 	}
-	resp, err := httpClient.Do(r.req)
+	resp, err := httpClient.Do(r.Req)
 	if err != nil {
 		return 0, err
 	}
@@ -188,7 +160,7 @@ func (r *HttpReq) call(v interface{}, httpClient *http.Client) (int, error) {
 		return 0, err
 	}
 	if v != nil {
-		if err := (DataTypeFactory{}).New(r.respDataType).unMarshal(b, v); err != nil {
+		if err := (DataTypeFactory{}).New(r.RespDataType).unMarshal(b, v); err != nil {
 			return resp.StatusCode, err
 		}
 	}
