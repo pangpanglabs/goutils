@@ -14,6 +14,7 @@ import (
 	"github.com/pangpanglabs/goutils/behaviorlog"
 
 	"github.com/pangpanglabs/goutils/httpreq"
+
 	"github.com/pangpanglabs/goutils/test"
 )
 
@@ -165,9 +166,11 @@ func TestParamXml(t *testing.T) {
 		<price>34</price>
 		</xml>`
 		var v ApiResult
-		statusCode, err := httpreq.New(http.MethodPost, s.URL, xmlStr, httpreq.XmlType).
-			Call(&v)
-		fmt.Println(v)
+		statusCode, err := httpreq.New(http.MethodPost, s.URL, xmlStr, func(httpReq *httpreq.HttpReq) error {
+			httpReq.ReqDataType = httpreq.XmlType
+			httpReq.RespDataType = httpreq.XmlType
+			return nil
+		}).Call(&v)
 		test.Ok(t, err)
 		test.Equals(t, statusCode, 200)
 		test.Equals(t, int64(34), v.Result)
@@ -190,7 +193,11 @@ func TestRequestXml_ResponseByteArray(t *testing.T) {
 
 	t.Run("POST", func(t *testing.T) {
 		var v []byte
-		statusCode, err := httpreq.New(http.MethodPost, s.URL, nil, httpreq.XmlType, httpreq.ByteArrayType).
+		statusCode, err := httpreq.New(http.MethodPost, s.URL, nil, func(httpReq *httpreq.HttpReq) error {
+			httpReq.ReqDataType = httpreq.XmlType
+			httpReq.RespDataType = httpreq.ByteArrayType
+			return nil
+		}).
 			Call(&v)
 		test.Ok(t, err)
 		test.Equals(t, statusCode, 200)

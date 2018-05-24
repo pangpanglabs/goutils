@@ -45,7 +45,7 @@ const (
 
 type reqFormatter interface {
 	marshal(data interface{}) ([]byte, error)
-	head() string
+	contentType() string
 	unMarshal(data []byte, v interface{}) error
 }
 
@@ -78,7 +78,7 @@ func (XmlFormat) marshal(param interface{}) ([]byte, error) {
 	byteData := []byte(paramStr)
 	return byteData, nil
 }
-func (XmlFormat) head() string {
+func (XmlFormat) contentType() string {
 	return "application/xml"
 }
 func (XmlFormat) unMarshal(data []byte, v interface{}) error {
@@ -94,7 +94,7 @@ type JsonFormat struct {
 func (JsonFormat) marshal(param interface{}) ([]byte, error) {
 	return json.Marshal(param)
 }
-func (JsonFormat) head() string {
+func (JsonFormat) contentType() string {
 	return "application/json"
 }
 func (JsonFormat) unMarshal(data []byte, v interface{}) error {
@@ -115,7 +115,7 @@ func (FormFormat) marshal(param interface{}) ([]byte, error) {
 	byteData := []byte(paramStr)
 	return byteData, nil
 }
-func (FormFormat) head() string {
+func (FormFormat) contentType() string {
 	return "application/x-www-form-urlencoded" + "; " + "charset=UTF-8"
 }
 func (FormFormat) unMarshal(data []byte, v interface{}) error {
@@ -135,7 +135,7 @@ func (ByteArrayFormat) marshal(param interface{}) ([]byte, error) {
 	}
 	return paramData, nil
 }
-func (ByteArrayFormat) head() string {
+func (ByteArrayFormat) contentType() string {
 	return "application/x-www-form-urlencoded" + "; " + "charset=UTF-8"
 }
 func (ByteArrayFormat) unMarshal(data []byte, v interface{}) error {
