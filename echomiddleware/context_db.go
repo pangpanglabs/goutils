@@ -78,6 +78,7 @@ type SqlLog struct {
 	Sql       interface{} `json:"sql,omitempty"`
 	Args      interface{} `json:"args,omitempty"`
 	Took      interface{} `json:"took,omitempty"`
+	Timestamp time.Time   `json:"timestamp,omitempty"`
 }
 type dbLogger struct {
 	serviceName string
@@ -89,8 +90,9 @@ func (logger *dbLogger) Write(v []interface{}) {
 		return
 	}
 	log := SqlLog{
-		Service: logger.serviceName,
-		Sql:     v[0],
+		Service:   logger.serviceName,
+		Sql:       v[0],
+		Timestamp: time.Now(),
 	}
 	if ctx, ok := v[len(v)-1].(context.Context); ok {
 		if logContext := behaviorlog.FromCtx(ctx); logContext != nil {
@@ -106,6 +108,11 @@ func (logger *dbLogger) Write(v []interface{}) {
 	} else if len(v) == 2 {
 		log.Took = v[1]
 	}
+
+	if d, ok := log.Took.(time.Duration); ok {
+		log.Timestamp = log.Timestamp.Add(-d)
+	}
+
 	logger.Send(&log)
 }
 func (logger *dbLogger) Infof(format string, v ...interface{})  { logger.Write(v) }
