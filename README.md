@@ -3,7 +3,7 @@
 Golang utility packages
 
 - [goutils/config](/config)
-- [goutils/httpreql](/httpreql)
+- [goutils/httpreq](/httpreq)
 - [goutils/cache](/cache)
 - [goutils/test](/test)
 - [goutils/number](/number)
