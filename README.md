@@ -11,3 +11,4 @@ Golang utility packages
 - [goutils/netrpc](/netrpc)
 - [goutils/echomiddleware](/echomiddleware)
 - [goutils/echotpl](/echotpl)
+- [goutils/jwtutil](/jwtutil)
