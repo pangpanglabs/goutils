@@ -23,7 +23,7 @@ func SetExpDuration(d time.Duration) {
 	expDuration = d
 }
 
-func NewTokenWithSecret(m map[string]string, jwtSecret string) (string, error) {
+func NewTokenWithSecret(m map[string]interface{}, jwtSecret string) (string, error) {
 	claims := jwt.MapClaims{
 		"nbf": time.Now().Unix(),
 		"exp": time.Now().Add(expDuration).Unix(),
@@ -33,7 +33,7 @@ func NewTokenWithSecret(m map[string]string, jwtSecret string) (string, error) {
 	}
 	return jwt.NewWithClaims(jwtSigningMethod, claims).SignedString([]byte(jwtSecret))
 }
-func NewToken(m map[string]string) (string, error) {
+func NewToken(m map[string]interface{}) (string, error) {
 	return NewTokenWithSecret(m, jwtSecret)
 }
 
