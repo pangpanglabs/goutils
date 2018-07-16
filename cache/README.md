@@ -40,10 +40,10 @@ mycache = cache.NewRedis(redisConn,
 
 Save to cache:
 ```golang
-loadFromCache, err := cache.LoadOrStore(key, &target,
-        func() (interface{}, error) {
-                // load and return value
-        })
+loadFromCache, err := cache.LoadOrStore(key, &target, func() (interface{}, error) {
+        // return your own result
+        return "value", nil
+})
 ```
 
 Delete from cache:
