@@ -148,8 +148,7 @@ func shouldWriteBodyLog(req *http.Request, logContext *behaviorlog.LogContext) b
 	}
 
 	contentType := req.Header.Get(echo.HeaderContentType)
-	if contentType != echo.MIMEApplicationJSON &&
-		contentType != echo.MIMEApplicationJSONCharsetUTF8 {
+	if !strings.HasPrefix(strings.ToLower(contentType), echo.MIMEApplicationJSON) {
 		return false
 	}
 
