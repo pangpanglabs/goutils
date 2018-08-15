@@ -58,8 +58,10 @@ func NewRedis(uri string, options ...func(*Redis)) *Redis {
 }
 
 func (r *Redis) LoadOrStore(key string, value interface{}, getter func() (interface{}, error)) (loadFromCache bool, err error) {
-	if err := r.getFromRedis(key, value); err == nil {
+	if isError, err := r.getFromRedis(key, value); err == nil {
 		return true, nil
+	} else if isError == true && err != nil {
+		return false, err
 	}
 
 	v, err := getter()
@@ -102,18 +104,24 @@ func (r *Redis) setToRedis(k string, v interface{}) {
 	}
 	logrus.WithField("key", k).Info("Set To Redis")
 }
-func (r *Redis) getFromRedis(k string, v interface{}) error {
+func (r *Redis) getFromRedis(k string, v interface{}) (isError bool, err error) {
 	redisConn := r.Get()
 	reply, err := redis.Bytes(redisConn.Do("GET", k))
 	redisConn.Close()
 	if err != nil {
 		if err == redis.ErrNil {
 			logrus.WithField("key", k).Info("Not found")
+			return false, err
 		}
-		return err
+		return true, err
 	}
 
-	return r.Converter.Decode(reply, v)
+	err = r.Converter.Decode(reply, v)
+	if err != nil {
+		return true, err
+	}
+
+	return false, nil
 }
 
 func redisConnFromUri(uriString string) (redis.Conn, error) {
