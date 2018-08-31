@@ -29,14 +29,12 @@ Or, create redis cache with addiotional options:
 ```golang
 redisConn := "redis://127.0.0.1:6379"
 mycache = cache.NewRedis(redisConn,
-        cache.WithExpireTime(time.Hour*3),
-        cache.WithGobConverter(),
         func(redis *cache.Redis) {
+                redis.ExpireTime = time.Second * 30
                 // setup additional options
         },
 )
 ```
-> If you want to use `GobConverter`, you have to identify the concrete type of a value using `gob.Register()` function.
 
 Save to cache:
 ```golang

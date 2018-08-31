@@ -22,17 +22,6 @@ type Redis struct {
 	Converter  Converter
 }
 
-func WithExpireTime(d time.Duration) func(*Redis) {
-	return func(r *Redis) {
-		r.ExpireTime = d
-	}
-}
-func WithGobConverter() func(*Redis) {
-	return func(r *Redis) {
-		r.Converter = GobConverter{}
-	}
-}
-
 func NewRedis(uri string, options ...func(*Redis)) *Redis {
 	redis := &Redis{
 		Pool: &redis.Pool{
