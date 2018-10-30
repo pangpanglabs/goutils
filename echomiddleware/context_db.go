@@ -47,7 +47,7 @@ func ContextDB(service string, db *xorm.Engine, kafkaConfig KafkaConfig) echo.Mi
 			c.SetRequest(req.WithContext(context.WithValue(req.Context(), ContextDBName, session)))
 
 			switch req.Method {
-			case "POST", "PUT", "DELETE":
+			case "POST", "PUT", "DELETE", "PATCH":
 				if err := session.Begin(); err != nil {
 					log.Println(err)
 				}
