@@ -60,6 +60,7 @@ var logger = logrus.New()
 
 func init() {
 	logger.Formatter = &logrus.JSONFormatter{}
+	logger.SetLevel(logrus.WarnLevel)
 }
 
 func SetLogLevel(level logrus.Level) {
