@@ -3,6 +3,8 @@ package echomiddleware
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -40,7 +42,15 @@ func BehaviorLogger(serviceName string, config KafkaConfig, options ...func(*beh
 		c.Producer.RequiredAcks = sarama.WaitForLocal       // Only wait for the leader to ack
 		c.Producer.Compression = sarama.CompressionGZIP     // Compress messages
 		c.Producer.Flush.Frequency = 500 * time.Millisecond // Flush batches every 500ms
-
+		// Setting SSL
+		if config.SSL.Enable {
+			tlsConfig, err := newTLSConfig(config.SSL.ClientCertFile, config.SSL.ClientKeyFile, config.SSL.CACertFile)
+			if err != nil {
+				logrus.Error("Unable new TLS config for kafka.", err)
+			}
+			c.Net.TLS.Enable = true
+			c.Net.TLS.Config = tlsConfig
+		}
 	}); err != nil {
 		logrus.Error("Create Kafka Producer Error", err)
 	} else {
@@ -212,4 +222,28 @@ func (er *echoRouter) initialize(c echo.Context) {
 	for _, r := range c.Echo().Routes() {
 		er.routes[fmt.Sprintf("%s+%s", r.Path, r.Method)] = r.Name
 	}
+}
+
+func newTLSConfig(clientCertFile, clientKeyFile, caCertFile string) (*tls.Config, error) {
+	tlsConfig := tls.Config{}
+	// Load client cert
+	cert, err := tls.LoadX509KeyPair(clientCertFile, clientKeyFile)
+	if err != nil {
+		return &tlsConfig, err
+	}
+
+	tlsConfig.Certificates = []tls.Certificate{cert}
+
+	// Load CA cert
+	caCert, err := ioutil.ReadFile(caCertFile)
+	if err != nil {
+		return &tlsConfig, err
+	}
+
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+	tlsConfig.RootCAs = caCertPool
+
+	tlsConfig.BuildNameToCertificate()
+	return &tlsConfig, err
 }
