@@ -220,7 +220,11 @@ func (echoRouter) convertHandlerNameToControllerAndAction(handlerName string) (c
 func (er *echoRouter) initialize(c echo.Context) {
 	er.routes = make(map[string]string)
 	for _, r := range c.Echo().Routes() {
-		er.routes[fmt.Sprintf("%s+%s", r.Path, r.Method)] = r.Name
+		path := r.Path
+		if len(path) == 0 || path[0] != '/' {
+			path = "/" + path
+		}
+		er.routes[fmt.Sprintf("%s+%s", path, r.Method)] = r.Name
 	}
 }
 
