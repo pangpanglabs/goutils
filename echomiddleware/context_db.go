@@ -6,9 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Shopify/sarama"
 	"github.com/pangpanglabs/goutils/behaviorlog"
-	"github.com/sirupsen/logrus"
 
 	"github.com/go-xorm/core"
 	"github.com/go-xorm/xorm"
@@ -18,23 +16,12 @@ import (
 
 const ContextDBName = "DB"
 
-func ContextDB(service string, db *xorm.Engine, kafkaConfig KafkaConfig) echo.MiddlewareFunc {
+func ContextDB(service string, db *xorm.Engine, kafkaConfig kafka.Config) echo.MiddlewareFunc {
 	db.ShowExecTime()
 	if len(kafkaConfig.Brokers) != 0 {
-		if producer, err := kafka.NewProducer(kafkaConfig.Brokers, kafkaConfig.Topic, func(c *sarama.Config) {
-			c.Producer.RequiredAcks = sarama.WaitForLocal       // Only wait for the leader to ack
-			c.Producer.Compression = sarama.CompressionGZIP     // Compress messages
-			c.Producer.Flush.Frequency = 500 * time.Millisecond // Flush batches every 500ms
-			// Setting SSL
-			if kafkaConfig.SSL.Enable {
-				tlsConfig, err := newTLSConfig(kafkaConfig.SSL.ClientCertFile, kafkaConfig.SSL.ClientKeyFile, kafkaConfig.SSL.CACertFile)
-				if err != nil {
-					logrus.Error("Unable new TLS config for kafka.", err)
-				}
-				c.Net.TLS.Enable = true
-				c.Net.TLS.Config = tlsConfig
-			}
-		}); err == nil {
+		if producer, err := kafka.NewProducer(kafkaConfig.Brokers, kafkaConfig.Topic,
+			kafka.WithDefault(),
+			kafka.WithTLS(kafkaConfig.SSL)); err == nil {
 			db.SetLogger(&dbLogger{serviceName: service, Producer: producer})
 			db.ShowSQL()
 		}

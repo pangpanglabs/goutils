@@ -3,8 +3,6 @@ package echomiddleware
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -13,9 +11,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
-	"time"
 
-	"github.com/Shopify/sarama"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 	"github.com/pangpanglabs/goutils/behaviorlog"
@@ -36,22 +32,11 @@ func init() {
 	}
 }
 
-func BehaviorLogger(serviceName string, config KafkaConfig, options ...func(*behaviorlog.LogContext)) echo.MiddlewareFunc {
+func BehaviorLogger(serviceName string, config kafka.Config, options ...func(*behaviorlog.LogContext)) echo.MiddlewareFunc {
 	var producer *kafka.Producer
-	if p, err := kafka.NewProducer(config.Brokers, config.Topic, func(c *sarama.Config) {
-		c.Producer.RequiredAcks = sarama.WaitForLocal       // Only wait for the leader to ack
-		c.Producer.Compression = sarama.CompressionGZIP     // Compress messages
-		c.Producer.Flush.Frequency = 500 * time.Millisecond // Flush batches every 500ms
-		// Setting SSL
-		if config.SSL.Enable {
-			tlsConfig, err := newTLSConfig(config.SSL.ClientCertFile, config.SSL.ClientKeyFile, config.SSL.CACertFile)
-			if err != nil {
-				logrus.Error("Unable new TLS config for kafka.", err)
-			}
-			c.Net.TLS.Enable = true
-			c.Net.TLS.Config = tlsConfig
-		}
-	}); err != nil {
+	if p, err := kafka.NewProducer(config.Brokers, config.Topic,
+		kafka.WithDefault(),
+		kafka.WithTLS(config.SSL)); err != nil {
 		logrus.Error("Create Kafka Producer Error", err)
 	} else {
 		producer = p
@@ -224,28 +209,4 @@ func (er *echoRouter) initialize(c echo.Context) {
 		}
 		er.routes[fmt.Sprintf("%s+%s", path, r.Method)] = r.Name
 	}
-}
-
-func newTLSConfig(clientCertFile, clientKeyFile, caCertFile string) (*tls.Config, error) {
-	tlsConfig := tls.Config{}
-	// Load client cert
-	cert, err := tls.LoadX509KeyPair(clientCertFile, clientKeyFile)
-	if err != nil {
-		return &tlsConfig, err
-	}
-
-	tlsConfig.Certificates = []tls.Certificate{cert}
-
-	// Load CA cert
-	caCert, err := ioutil.ReadFile(caCertFile)
-	if err != nil {
-		return &tlsConfig, err
-	}
-
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCert)
-	tlsConfig.RootCAs = caCertPool
-
-	tlsConfig.BuildNameToCertificate()
-	return &tlsConfig, err
 }

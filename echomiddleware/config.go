@@ -1,13 +1,8 @@
 package echomiddleware
 
-type KafkaConfig struct {
-	Brokers []string
-	Topic   string
-	SSL     struct {
-		Enable                                    bool
-		ClientCertFile, ClientKeyFile, CACertFile string
-	}
-}
+import "github.com/pangpanglabs/goutils/kafka"
+
+type KafkaConfig = kafka.Config
 
 type ZipkinConfig struct {
 	Collector struct {
