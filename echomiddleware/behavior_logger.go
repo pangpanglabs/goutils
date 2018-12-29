@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
-	"github.com/dgrijalva/jwt-go"
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 	"github.com/pangpanglabs/goutils/behaviorlog"
 	"github.com/pangpanglabs/goutils/kafka"
@@ -90,16 +90,14 @@ func BehaviorLogger(serviceName string, config KafkaConfig, options ...func(*beh
 			behaviorLogger.BytesSent = res.Size
 			behaviorLogger.Controller, behaviorLogger.Action = echoRouter.getControllerAndAction(c)
 			if body != nil {
-				var bodyParam map[string]interface{}
+				var bodyParam interface{}
 				d := json.NewDecoder(bytes.NewBuffer(passwordRegex.ReplaceAll(body, []byte(`"$1": "*"`))))
 				d.UseNumber()
 				if err := d.Decode(&bodyParam); err != nil {
 					logrus.WithField("body", string(body)).Error("Decode Request Body Error", err)
 				}
 
-				for k, v := range bodyParam {
-					behaviorLogger.Params[k] = v
-				}
+				behaviorLogger.Body = bodyParam
 			}
 
 			for _, name := range c.ParamNames() {
