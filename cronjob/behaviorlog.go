@@ -2,7 +2,6 @@ package cronjob
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/labstack/gommon/random"
@@ -25,11 +24,9 @@ func BehaviorLogger(serviceName string, config kafka.Config) Middleware {
 
 	return func(next HandlerFunc) HandlerFunc {
 		return func(ctx context.Context) (err error) {
-			fmt.Println("behaviorlogMiddleware")
-
 			behaviorLogContext := behaviorlog.NewNopContext()
 			behaviorLogContext.Producer = producer
-			behaviorLogContext.Service = "omni-stock-job"
+			behaviorLogContext.Service = serviceName
 			behaviorLogContext.RequestID = random.String(32)
 			behaviorLogContext.ActionID = random.String(32)
 			behaviorLogContext.Timestamp = time.Now()
