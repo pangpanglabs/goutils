@@ -37,6 +37,7 @@ type LogContext struct {
 	RequestLength int64         `json:"request_length,omitempty"`
 	BytesSent     int64         `json:"bytes_sent,omitempty"`
 
+	Body       interface{}            `json:"body,omitempty"`
 	Params     map[string]interface{} `json:"params,omitempty"`
 	Controller string                 `json:"controller,omitempty"`
 	Action     string                 `json:"action,omitempty"`
