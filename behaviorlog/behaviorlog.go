@@ -221,6 +221,7 @@ func (c *LogContext) Write() {
 		"controller":       c.Controller,
 		"action":           c.Action,
 		"bizAttr":          c.BizAttr,
+		"body":             c.Body,
 	})
 	if c.Err != "" {
 		logEntry = logEntry.WithError(errors.New(c.Err))
