@@ -71,7 +71,7 @@ func (r *Redis) LoadOrStore(key string, value interface{}, getter func() (interf
 		return false, err
 	}
 	if v != nil {
-		go r.setToRedis(key, v)
+		r.setToRedis(key, v)
 	}
 	return false, nil
 }
