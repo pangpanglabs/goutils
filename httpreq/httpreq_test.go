@@ -230,3 +230,48 @@ func returnXmlError(errStr string) string {
 	})
 	return string(errMsg)
 }
+
+func TestRawResponse(t *testing.T) {
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		keys, ok := r.URL.Query()["maxResultCount"]
+		if !ok || len(keys) < 1 {
+			log.Println("Url Param 'maxResultCount' is missing")
+			return
+		}
+		test.Equals(t, "2", keys[0])
+		response, _ := json.Marshal(map[string]interface{}{
+			"success": true,
+			"result":  keys[0],
+			"error":   nil,
+		})
+		fmt.Fprint(w, string(response))
+		return
+	}))
+	defer s.Close()
+
+	type ApiResult struct {
+		Result  interface{} `json:"result"`
+		Success bool        `json:"success"`
+		Error   struct {
+			Code    int         `json:"code,omitempty"`
+			Details interface{} `json:"details,omitempty"`
+			Message string      `json:"message,omitempty"`
+		} `json:"error"`
+	}
+
+	t.Run("GET", func(t *testing.T) {
+		var v ApiResult
+		url := s.URL + "?maxResultCount=2"
+		resp, err := httpreq.New(http.MethodGet, url, nil).
+			RawCall()
+		defer resp.Body.Close()
+		test.Ok(t, err)
+		test.Equals(t, resp.StatusCode, 200)
+		b, err := ioutil.ReadAll(resp.Body)
+		test.Ok(t, err)
+		err = json.Unmarshal(b, &v)
+		test.Ok(t, err)
+		test.Equals(t, "2", v.Result)
+	})
+
+}
