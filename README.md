@@ -13,3 +13,4 @@ Golang utility packages
 - [goutils/echotpl](/echotpl)
 - [goutils/jwtutil](/jwtutil)
 - [goutils/cronjob](/cronjob)
+- [goutils/joblog](/joblog)
