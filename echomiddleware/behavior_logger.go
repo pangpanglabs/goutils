@@ -7,12 +7,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"regexp"
 	"strings"
 	"sync"
 
-	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 	"github.com/pangpanglabs/goutils/behaviorlog"
 	"github.com/pangpanglabs/goutils/kafka"
@@ -20,17 +18,8 @@ import (
 )
 
 var (
-	passwordRegex      = regexp.MustCompile(`"(password|passwd)":(\s)*"(.*)"`)
-	userFieldnameInJwt string
-	jwtSecret          = os.Getenv("JWT_SECRET")
+	passwordRegex = regexp.MustCompile(`"(password|passwd)":(\s)*"(.*)"`)
 )
-
-func init() {
-	userFieldnameInJwt = os.Getenv("JWT_USER_FIELDNAME")
-	if userFieldnameInJwt == "" {
-		userFieldnameInJwt = "userName"
-	}
-}
 
 func BehaviorLogger(serviceName string, config kafka.Config, options ...func(*behaviorlog.LogContext)) echo.MiddlewareFunc {
 	var producer *kafka.Producer
@@ -88,47 +77,12 @@ func BehaviorLogger(serviceName string, config kafka.Config, options ...func(*be
 			for _, name := range c.ParamNames() {
 				behaviorLogger.Params[name] = c.Param(name)
 			}
-
-			behaviorLogger.Username = getUsernameFromJwtToken(behaviorLogger.AuthToken)
-
 			behaviorLogger.Write()
 			return
 		}
 	}
 }
 
-func getUsernameFromJwtToken(auth string) string {
-	if !strings.HasPrefix(auth, "Bearer ") {
-		return ""
-	}
-
-	token, _ := jwt.Parse(auth[len("Bearer "):], func(t *jwt.Token) (interface{}, error) {
-		if t.Method.Alg() != "HS256" {
-			return nil, fmt.Errorf("unexpected jwt signing method=%v", t.Header["alg"])
-		}
-		return jwtSecret, nil
-	})
-
-	if token == nil || token.Claims == nil {
-		return ""
-	}
-
-	m, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return ""
-	}
-
-	username, ok := m[userFieldnameInJwt]
-	if !ok {
-		return ""
-	}
-
-	if v, ok := username.(string); ok {
-		return v
-	}
-
-	return ""
-}
 func shouldWriteBodyLog(req *http.Request, logContext *behaviorlog.LogContext) bool {
 	if logContext != nil && logContext.BodyHide {
 		return false

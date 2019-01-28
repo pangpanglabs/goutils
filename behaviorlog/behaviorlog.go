@@ -20,8 +20,10 @@ type LogContext struct {
 	logger   *logrus.Logger
 
 	ParentActionID string `json:"parent_action_id,omitempty"`
+	SessionID      string `json:"session_id,omitempty"`
 	ActionID       string `json:"action_id,omitempty"`
 	RequestID      string `json:"request_id,omitempty"`
+	TenantCode     string `json:"tenant_code,omitempty"`
 	Service        string `json:"service,omitempty"`
 
 	Timestamp     time.Time     `json:"timestamp,omitempty"`
@@ -43,6 +45,7 @@ type LogContext struct {
 	Action     string                 `json:"action,omitempty"`
 	BizAttr    map[string]interface{} `json:"bizAttr,omitempty"`
 	Username   string                 `json:"username,omitempty"`
+	Aud        string                 `json:"aud,omitempty"`
 	AuthToken  string                 `json:"-"`
 
 	Err      string `json:"error,omitempty"`
@@ -114,6 +117,12 @@ func New(serviceName string, req *http.Request, options ...func(*LogContext)) *L
 		BizAttr:   map[string]interface{}{},
 		AuthToken: req.Header.Get(echo.HeaderAuthorization),
 	}
+
+	userClaim := NewUserClaimFromJwtToken(c.AuthToken)
+	c.SessionID = userClaim.SessionID
+	c.TenantCode = userClaim.TenantCode
+	c.Aud = userClaim.Aud
+	c.Username = userClaim.Username
 
 	for _, o := range options {
 		if o != nil {
