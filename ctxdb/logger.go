@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-xorm/core"
 	"github.com/pangpanglabs/goutils/behaviorlog"
+	"github.com/pangpanglabs/goutils/ctxbase"
 	"github.com/pangpanglabs/goutils/kafka"
 )
 
@@ -33,9 +34,12 @@ func (logger *dbLogger) Write(v []interface{}) {
 		Timestamp: time.Now(),
 	}
 	if ctx, ok := v[len(v)-1].(context.Context); ok {
-		if logContext := behaviorlog.FromCtx(ctx); logContext != nil {
-			log.ActionID = logContext.ActionID
-			log.RequestID = logContext.RequestID
+		if cb := ctxbase.FromCtx(ctx); cb != nil {
+			log.ActionID = cb.ActionID
+			log.RequestID = cb.RequestID
+		} else if cl := behaviorlog.FromCtx(ctx); cl != nil {
+			log.ActionID = cl.ActionID
+			log.RequestID = cl.RequestID
 		}
 		v = v[:len(v)-1]
 	}

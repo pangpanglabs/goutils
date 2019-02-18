@@ -6,6 +6,7 @@
 A log is logged when the api is called
 ```golang
 e := echo.New()
+e.Pre(echomiddleware.ContextBase())
 e.Use(echomiddleware.BehaviorLogger("xxx-Service", echomiddleware.KafkaConfig(
 		echomiddleware.KafkaConfig{
 			Brokers: []string{
@@ -18,6 +19,7 @@ e.Use(echomiddleware.BehaviorLogger("xxx-Service", echomiddleware.KafkaConfig(
 ### Advanced usage
 ```golang
 e := echo.New()
+e.Pre(echomiddleware.ContextBase())
 e.Use(echomiddleware.BehaviorLogger("xxx-Service", echomiddleware.KafkaConfig(
 		echomiddleware.KafkaConfig{
 			Brokers: []string{

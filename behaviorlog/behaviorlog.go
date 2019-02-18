@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo"
-	"github.com/labstack/gommon/random"
+	"github.com/pangpanglabs/goutils/ctxbase"
 	"github.com/pangpanglabs/goutils/kafka"
 	"github.com/sirupsen/logrus"
 )
@@ -93,14 +93,23 @@ func New(serviceName string, req *http.Request, options ...func(*LogContext)) *L
 		params[k] = v[0]
 	}
 
+	var aid, rid string
+	if cb := ctxbase.FromCtx(req.Context()); cb != nil {
+		aid = cb.ActionID
+		rid = cb.RequestID
+	} else {
+		aid = ctxbase.NewID()
+		rid = req.Header.Get(HeaderXRequestID)
+	}
+
 	c := &LogContext{
 		// Producer: producer,
 		logger: logger,
 
 		Service:        serviceName,
 		ParentActionID: req.Header.Get(HeaderXActionID),
-		ActionID:       random.String(32),
-		RequestID:      req.Header.Get(HeaderXRequestID),
+		ActionID:       aid,
+		RequestID:      rid,
 
 		Timestamp:     time.Now(),
 		RemoteIP:      realIP,
@@ -145,7 +154,7 @@ func (c *LogContext) Clone() *LogContext {
 		logger:         c.logger,
 		Service:        c.Service,
 		ParentActionID: c.ActionID,
-		ActionID:       random.String(32),
+		ActionID:       ctxbase.NewID(),
 		RequestID:      c.RequestID,
 		Timestamp:      time.Now(),
 		RemoteIP:       c.RemoteIP,
