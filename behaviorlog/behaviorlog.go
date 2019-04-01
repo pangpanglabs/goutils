@@ -38,6 +38,7 @@ type LogContext struct {
 	Latency       time.Duration `json:"latency,omitempty"`
 	RequestLength int64         `json:"request_length,omitempty"`
 	BytesSent     int64         `json:"bytes_sent,omitempty"`
+	Hostname      string        `json:"hostname,omitempty"`
 
 	Body       interface{}            `json:"body,omitempty"`
 	Params     map[string]interface{} `json:"params,omitempty"`

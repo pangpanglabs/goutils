@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -22,6 +23,9 @@ var (
 )
 
 func BehaviorLogger(serviceName string, config kafka.Config, options ...func(*behaviorlog.LogContext)) echo.MiddlewareFunc {
+	hostname, err := os.Hostname()
+	logrus.WithError(err).Error("Fail to get hostname")
+
 	var producer *kafka.Producer
 	if p, err := kafka.NewProducer(config.Brokers, config.Topic,
 		kafka.WithDefault(),
@@ -42,6 +46,9 @@ func BehaviorLogger(serviceName string, config kafka.Config, options ...func(*be
 					option(behaviorLogger)
 				}
 			}
+
+			behaviorLogger.Hostname = hostname
+
 			var body []byte
 			if shouldWriteBodyLog(req, behaviorLogger) {
 				body, _ = ioutil.ReadAll(req.Body)
