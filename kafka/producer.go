@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 
 	"github.com/Shopify/sarama"
@@ -25,7 +26,7 @@ func NewProducer(brokers []string, topic string, options ...func(*sarama.Config)
 
 	go func() {
 		for err := range producer.Errors() {
-			log.Printf("Failed to send log entry to kafka: %v\n", err)
+			log.Printf("Failed to send log entry to kafka : %v\n", err)
 		}
 	}()
 
@@ -43,11 +44,35 @@ func (p *Producer) Send(v interface{}) error {
 
 	if p.producer == nil {
 		log.Println("Kafka producer is nil")
-		return nil
+		return fmt.Errorf("Kfka producer is nil")
 	}
 
 	p.producer.Input() <- &sarama.ProducerMessage{
 		Topic: p.topic,
+		Value: sarama.ByteEncoder(msg),
+	}
+
+	return nil
+}
+func (p *Producer) SendWithKey(v interface{}, key string) error {
+	msg, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	if p.producer == nil {
+		log.Println("Kafka producer is nil")
+		return fmt.Errorf("Kfka producer is nil")
+	}
+
+	if key == "" {
+		log.Println("producer Key is empty")
+		return fmt.Errorf("producer Key is empty")
+	}
+
+	p.producer.Input() <- &sarama.ProducerMessage{
+		Topic: p.topic,
+		Key:   sarama.ByteEncoder(key),
 		Value: sarama.ByteEncoder(msg),
 	}
 
