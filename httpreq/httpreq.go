@@ -118,7 +118,9 @@ func (r *HttpReq) WithBehaviorLogContext(logContext *behaviorlog.LogContext) *Ht
 
 	r = r.WithRequestID(logContext.RequestID)
 	r = r.WithActionID(logContext.ActionID)
-	r = r.WithToken(logContext.AuthToken)
+	if len(r.Req.Header.Get("Authorization")) == 0 {
+		r = r.WithToken(logContext.AuthToken)
+	}
 
 	return r
 }
