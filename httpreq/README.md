@@ -53,6 +53,38 @@ statusCode, err := httpreq.New(http.MethodPost, "http://127.0.0.1", body).
 
 ## Advanced usage
 
+### Timeout
+
+1. Declare global `*http.Client` variable
+```golang
+var client = httpreq.NewClient(httpreq.ClientConfig{
+	Timeout: time.Second,
+})
+```
+2. Call with `*http.Client`
+```golang
+_, err := httpreq.New(http.MethodGet, url, nil).CallWithClient(&resp, client)
+```
+
+### Retry
+Use https://github.com/matryer/try
+
+1. Import `try` package
+
+```golang
+import try "gopkg.in/matryer/try.v1"
+```
+
+2. Use `try` package
+```golang
+err := try.Do(func(attempt int) (bool, error) {
+	_, err := httpreq.New(http.MethodGet, url, nil).Call(&resp)
+	return attempt < 5, err // try 5 times
+})
+```
+
+### ResponseType
+
 The types of request and response support are as follows:
 - JsonType
 - FormType
