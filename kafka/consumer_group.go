@@ -47,7 +47,7 @@ func NewConsumerGroup(groupId string, brokers []string, topic string, options ..
 		}
 	}()
 
-	logrus.Info("Start to consume order-event")
+	logrus.WithField("topic", topic).Info("Start to consume")
 
 	return &handler, nil
 }
