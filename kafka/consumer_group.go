@@ -39,6 +39,7 @@ func NewConsumerGroup(groupId string, brokers []string, topic string, options ..
 		<-signals
 		log.Println("Initiating shutdown of consumer group...")
 		consumerGroup.Close()
+		os.Exit(1)
 	}()
 
 	go func() {
