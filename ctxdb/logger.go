@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-xorm/core"
 	"github.com/pangpanglabs/goutils/behaviorlog"
 	"github.com/pangpanglabs/goutils/ctxbase"
 	"github.com/pangpanglabs/goutils/kafka"
+	"xorm.io/core"
 )
 
 type SqlLog struct {
