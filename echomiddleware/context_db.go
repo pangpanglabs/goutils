@@ -11,9 +11,14 @@ import (
 	"github.com/pangpanglabs/goutils/kafka"
 )
 
-const ContextDBName = "DB"
+type ContextDBType string
+
+var ContextDBName ContextDBType = "DB"
 
 func ContextDB(service string, xormEngine *xorm.Engine, kafkaConfig kafka.Config) echo.MiddlewareFunc {
+	return ContextDBWithName(service, ContextDBName, xormEngine, kafkaConfig)
+}
+func ContextDBWithName(service string, contexDBName ContextDBType, xormEngine *xorm.Engine, kafkaConfig kafka.Config) echo.MiddlewareFunc {
 	db := ctxdb.New(xormEngine, service, kafkaConfig)
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -24,7 +29,7 @@ func ContextDB(service string, xormEngine *xorm.Engine, kafkaConfig kafka.Config
 			session := db.NewSession(ctx)
 			defer session.Close()
 
-			c.SetRequest(req.WithContext(context.WithValue(ctx, ContextDBName, session)))
+			c.SetRequest(req.WithContext(context.WithValue(ctx, contexDBName, session)))
 
 			switch req.Method {
 			case "POST", "PUT", "DELETE", "PATCH":
