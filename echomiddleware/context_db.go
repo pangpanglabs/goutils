@@ -11,14 +11,12 @@ import (
 	"github.com/pangpanglabs/goutils/kafka"
 )
 
-type ContextDBType string
-
-var ContextDBName ContextDBType = "DB"
+var ContextDBName = "DB"
 
 func ContextDB(service string, xormEngine *xorm.Engine, kafkaConfig kafka.Config) echo.MiddlewareFunc {
 	return ContextDBWithName(service, ContextDBName, xormEngine, kafkaConfig)
 }
-func ContextDBWithName(service string, contexDBName ContextDBType, xormEngine *xorm.Engine, kafkaConfig kafka.Config) echo.MiddlewareFunc {
+func ContextDBWithName(service string, contexDBName string, xormEngine *xorm.Engine, kafkaConfig kafka.Config) echo.MiddlewareFunc {
 	db := ctxdb.New(xormEngine, service, kafkaConfig)
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
