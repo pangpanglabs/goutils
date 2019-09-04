@@ -43,8 +43,11 @@ func NewConsumerGroup(groupId string, brokers []string, topic string, options ..
 	}()
 
 	go func() {
-		if err := consumerGroup.Consume(context.Background(), []string{topic}, &handler); err != nil {
-			logrus.WithError(err).Error("Fail to consume kafka message")
+		for {
+			if err := consumerGroup.Consume(context.Background(), []string{topic}, &handler); err != nil {
+				logrus.WithError(err).Error("Fail to consume kafka message")
+				return
+			}
 		}
 	}()
 
@@ -58,6 +61,8 @@ func (c *ConsumerGroupHandler) Messages() (<-chan *sarama.ConsumerMessage, error
 func (c *ConsumerGroupHandler) ConsumeClaim(sess sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	for m := range claim.Messages() {
 		c.messages <- m
+		//MarkOffset 并不是实时写入kafka，有可能在程序crash时丢掉未提交的offset
+		sess.MarkMessage(m, "")
 	}
 	return nil
 }
