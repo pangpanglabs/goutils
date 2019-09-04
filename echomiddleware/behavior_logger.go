@@ -3,8 +3,6 @@ package echomiddleware
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -13,10 +11,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
-	"time"
 
-	"github.com/Shopify/sarama"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/labstack/echo"
 	"github.com/pangpanglabs/goutils/behaviorlog"
 	"github.com/pangpanglabs/goutils/kafka"
@@ -24,34 +19,17 @@ import (
 )
 
 var (
-	passwordRegex      = regexp.MustCompile(`"(password|passwd)":(\s)*"(.*)"`)
-	userFieldnameInJwt string
-	jwtSecret          = os.Getenv("JWT_SECRET")
+	passwordRegex = regexp.MustCompile(`"(password|passwd)":(\s)*"(.*)"`)
 )
 
-func init() {
-	userFieldnameInJwt = os.Getenv("JWT_USER_FIELDNAME")
-	if userFieldnameInJwt == "" {
-		userFieldnameInJwt = "userName"
-	}
-}
+func BehaviorLogger(serviceName string, config kafka.Config, options ...func(*behaviorlog.LogContext)) echo.MiddlewareFunc {
+	hostname, err := os.Hostname()
+	logrus.WithError(err).Error("Fail to get hostname")
 
-func BehaviorLogger(serviceName string, config KafkaConfig, options ...func(*behaviorlog.LogContext)) echo.MiddlewareFunc {
 	var producer *kafka.Producer
-	if p, err := kafka.NewProducer(config.Brokers, config.Topic, func(c *sarama.Config) {
-		c.Producer.RequiredAcks = sarama.WaitForLocal       // Only wait for the leader to ack
-		c.Producer.Compression = sarama.CompressionGZIP     // Compress messages
-		c.Producer.Flush.Frequency = 500 * time.Millisecond // Flush batches every 500ms
-		// Setting SSL
-		if config.SSL.Enable {
-			tlsConfig, err := newTLSConfig(config.SSL.ClientCertFile, config.SSL.ClientKeyFile, config.SSL.CACertFile)
-			if err != nil {
-				logrus.Error("Unable new TLS config for kafka.", err)
-			}
-			c.Net.TLS.Enable = true
-			c.Net.TLS.Config = tlsConfig
-		}
-	}); err != nil {
+	if p, err := kafka.NewProducer(config.Brokers, config.Topic,
+		kafka.WithDefault(),
+		kafka.WithTLS(config.SSL)); err != nil {
 		logrus.Error("Create Kafka Producer Error", err)
 	} else {
 		producer = p
@@ -68,6 +46,9 @@ func BehaviorLogger(serviceName string, config KafkaConfig, options ...func(*beh
 					option(behaviorLogger)
 				}
 			}
+
+			behaviorLogger.Hostname = hostname
+
 			var body []byte
 			if shouldWriteBodyLog(req, behaviorLogger) {
 				body, _ = ioutil.ReadAll(req.Body)
@@ -90,62 +71,25 @@ func BehaviorLogger(serviceName string, config KafkaConfig, options ...func(*beh
 			behaviorLogger.BytesSent = res.Size
 			behaviorLogger.Controller, behaviorLogger.Action = echoRouter.getControllerAndAction(c)
 			if body != nil {
-				var bodyParam map[string]interface{}
+				var bodyParam interface{}
 				d := json.NewDecoder(bytes.NewBuffer(passwordRegex.ReplaceAll(body, []byte(`"$1": "*"`))))
 				d.UseNumber()
 				if err := d.Decode(&bodyParam); err != nil {
 					logrus.WithField("body", string(body)).Error("Decode Request Body Error", err)
 				}
 
-				for k, v := range bodyParam {
-					behaviorLogger.Params[k] = v
-				}
+				behaviorLogger.Body = bodyParam
 			}
 
 			for _, name := range c.ParamNames() {
 				behaviorLogger.Params[name] = c.Param(name)
 			}
-
-			behaviorLogger.Username = getUsernameFromJwtToken(behaviorLogger.AuthToken)
-
 			behaviorLogger.Write()
 			return
 		}
 	}
 }
 
-func getUsernameFromJwtToken(auth string) string {
-	if !strings.HasPrefix(auth, "Bearer ") {
-		return ""
-	}
-
-	token, _ := jwt.Parse(auth[len("Bearer "):], func(t *jwt.Token) (interface{}, error) {
-		if t.Method.Alg() != "HS256" {
-			return nil, fmt.Errorf("unexpected jwt signing method=%v", t.Header["alg"])
-		}
-		return jwtSecret, nil
-	})
-
-	if token == nil || token.Claims == nil {
-		return ""
-	}
-
-	m, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return ""
-	}
-
-	username, ok := m[userFieldnameInJwt]
-	if !ok {
-		return ""
-	}
-
-	if v, ok := username.(string); ok {
-		return v
-	}
-
-	return ""
-}
 func shouldWriteBodyLog(req *http.Request, logContext *behaviorlog.LogContext) bool {
 	if logContext != nil && logContext.BodyHide {
 		return false
@@ -220,30 +164,10 @@ func (echoRouter) convertHandlerNameToControllerAndAction(handlerName string) (c
 func (er *echoRouter) initialize(c echo.Context) {
 	er.routes = make(map[string]string)
 	for _, r := range c.Echo().Routes() {
-		er.routes[fmt.Sprintf("%s+%s", r.Path, r.Method)] = r.Name
+		path := r.Path
+		if len(path) == 0 || path[0] != '/' {
+			path = "/" + path
+		}
+		er.routes[fmt.Sprintf("%s+%s", path, r.Method)] = r.Name
 	}
-}
-
-func newTLSConfig(clientCertFile, clientKeyFile, caCertFile string) (*tls.Config, error) {
-	tlsConfig := tls.Config{}
-	// Load client cert
-	cert, err := tls.LoadX509KeyPair(clientCertFile, clientKeyFile)
-	if err != nil {
-		return &tlsConfig, err
-	}
-
-	tlsConfig.Certificates = []tls.Certificate{cert}
-
-	// Load CA cert
-	caCert, err := ioutil.ReadFile(caCertFile)
-	if err != nil {
-		return &tlsConfig, err
-	}
-
-	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCert)
-	tlsConfig.RootCAs = caCertPool
-
-	tlsConfig.BuildNameToCertificate()
-	return &tlsConfig, err
 }

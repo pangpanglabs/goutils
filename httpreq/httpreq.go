@@ -118,7 +118,9 @@ func (r *HttpReq) WithBehaviorLogContext(logContext *behaviorlog.LogContext) *Ht
 
 	r = r.WithRequestID(logContext.RequestID)
 	r = r.WithActionID(logContext.ActionID)
-	r = r.WithToken(logContext.AuthToken)
+	if len(r.Req.Header.Get("Authorization")) == 0 {
+		r = r.WithToken(logContext.AuthToken)
+	}
 
 	return r
 }
@@ -133,13 +135,6 @@ func (r *HttpReq) CallWithClient(v interface{}, httpClient *http.Client) (int, e
 func (r *HttpReq) CallWithTransport(v interface{}, transport *http.Transport) (int, error) {
 	httpClient := &http.Client{Transport: transport}
 	return r.call(v, httpClient)
-}
-
-func (r *HttpReq) SetGlobalTransport(v interface{}, transport *http.Transport) (int, error) {
-	if defaultClient != nil {
-		defaultClient.Transport = transport
-	}
-	return r.call(v, defaultClient)
 }
 
 func (r *HttpReq) call(v interface{}, httpClient *http.Client) (int, error) {
@@ -165,5 +160,33 @@ func (r *HttpReq) call(v interface{}, httpClient *http.Client) (int, error) {
 		}
 	}
 	return resp.StatusCode, nil
+
+}
+
+func (r *HttpReq) RawCall() (*http.Response, error) {
+	return r.rawCall(defaultClient)
+}
+
+func (r *HttpReq) RawCallWithClient(httpClient *http.Client) (*http.Response, error) {
+	return r.rawCall(httpClient)
+}
+
+func (r *HttpReq) RawCallWithTransport(transport *http.Transport) (*http.Response, error) {
+	httpClient := &http.Client{Transport: transport}
+	return r.rawCall(httpClient)
+}
+
+func (r *HttpReq) rawCall(httpClient *http.Client) (*http.Response, error) {
+	if r.err != nil {
+		return nil, r.err
+	}
+	if len(r.Req.Header.Get("Content-Type")) == 0 {
+		r.Req.Header.Set("Content-Type", DataTypeFactory{}.New(r.ReqDataType).contentType())
+	}
+	resp, err := httpClient.Do(r.Req)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 
 }

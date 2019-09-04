@@ -12,3 +12,4 @@ Golang utility packages
 - [goutils/echomiddleware](/echomiddleware)
 - [goutils/echotpl](/echotpl)
 - [goutils/jwtutil](/jwtutil)
+- [goutils/cronjob](/cronjob)

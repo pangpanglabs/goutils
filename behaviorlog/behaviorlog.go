@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/labstack/echo"
-	"github.com/labstack/gommon/random"
+	"github.com/pangpanglabs/goutils/ctxbase"
 	"github.com/pangpanglabs/goutils/kafka"
 	"github.com/sirupsen/logrus"
 )
@@ -20,8 +20,10 @@ type LogContext struct {
 	logger   *logrus.Logger
 
 	ParentActionID string `json:"parent_action_id,omitempty"`
+	SessionID      string `json:"session_id,omitempty"`
 	ActionID       string `json:"action_id,omitempty"`
 	RequestID      string `json:"request_id,omitempty"`
+	TenantCode     string `json:"tenant_code,omitempty"`
 	Service        string `json:"service,omitempty"`
 
 	Timestamp     time.Time     `json:"timestamp,omitempty"`
@@ -36,12 +38,15 @@ type LogContext struct {
 	Latency       time.Duration `json:"latency,omitempty"`
 	RequestLength int64         `json:"request_length,omitempty"`
 	BytesSent     int64         `json:"bytes_sent,omitempty"`
+	Hostname      string        `json:"hostname,omitempty"`
 
+	Body       interface{}            `json:"body,omitempty"`
 	Params     map[string]interface{} `json:"params,omitempty"`
 	Controller string                 `json:"controller,omitempty"`
 	Action     string                 `json:"action,omitempty"`
 	BizAttr    map[string]interface{} `json:"bizAttr,omitempty"`
 	Username   string                 `json:"username,omitempty"`
+	Aud        string                 `json:"aud,omitempty"`
 	AuthToken  string                 `json:"-"`
 
 	Err      string `json:"error,omitempty"`
@@ -89,14 +94,23 @@ func New(serviceName string, req *http.Request, options ...func(*LogContext)) *L
 		params[k] = v[0]
 	}
 
+	var aid, rid string
+	if cb := ctxbase.FromCtx(req.Context()); cb != nil {
+		aid = cb.ActionID
+		rid = cb.RequestID
+	} else {
+		aid = ctxbase.NewID()
+		rid = req.Header.Get(HeaderXRequestID)
+	}
+
 	c := &LogContext{
 		// Producer: producer,
 		logger: logger,
 
 		Service:        serviceName,
 		ParentActionID: req.Header.Get(HeaderXActionID),
-		ActionID:       random.String(32),
-		RequestID:      req.Header.Get(HeaderXRequestID),
+		ActionID:       aid,
+		RequestID:      rid,
 
 		Timestamp:     time.Now(),
 		RemoteIP:      realIP,
@@ -113,6 +127,12 @@ func New(serviceName string, req *http.Request, options ...func(*LogContext)) *L
 		BizAttr:   map[string]interface{}{},
 		AuthToken: req.Header.Get(echo.HeaderAuthorization),
 	}
+
+	userClaim := NewUserClaimFromJwtToken(c.AuthToken)
+	c.SessionID = userClaim.SessionID
+	c.TenantCode = userClaim.TenantCode
+	c.Aud = userClaim.Aud
+	c.Username = userClaim.Username
 
 	for _, o := range options {
 		if o != nil {
@@ -135,7 +155,7 @@ func (c *LogContext) Clone() *LogContext {
 		logger:         c.logger,
 		Service:        c.Service,
 		ParentActionID: c.ActionID,
-		ActionID:       random.String(32),
+		ActionID:       ctxbase.NewID(),
 		RequestID:      c.RequestID,
 		Timestamp:      time.Now(),
 		RemoteIP:       c.RemoteIP,
@@ -220,6 +240,7 @@ func (c *LogContext) Write() {
 		"controller":       c.Controller,
 		"action":           c.Action,
 		"bizAttr":          c.BizAttr,
+		"body":             c.Body,
 	})
 	if c.Err != "" {
 		logEntry = logEntry.WithError(errors.New(c.Err))
