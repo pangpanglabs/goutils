@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/go-xorm/xorm"
-	"github.com/pangpanglabs/goutils/kafka"
+	"github.com/hillfolk/goutils/kafka"
 )
 
 type ContextDB struct {

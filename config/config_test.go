@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/pangpanglabs/goutils/config"
-	"github.com/pangpanglabs/goutils/test"
+	"github.com/hillfolk/goutils/config"
+	"github.com/hillfolk/goutils/test"
 )
 
 var (

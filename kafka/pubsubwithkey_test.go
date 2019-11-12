@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
-	"github.com/pangpanglabs/goutils/kafka"
-	"github.com/pangpanglabs/goutils/test"
+	"github.com/hillfolk/goutils/kafka"
+	"github.com/hillfolk/goutils/test"
 )
 
 var (

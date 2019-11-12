@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/go-xorm/xorm"
+	"github.com/hillfolk/goutils/ctxdb"
+	"github.com/hillfolk/goutils/kafka"
 	"github.com/labstack/echo"
-	"github.com/pangpanglabs/goutils/ctxdb"
-	"github.com/pangpanglabs/goutils/kafka"
 )
 
 type ContextDBType string

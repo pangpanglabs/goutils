@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hillfolk/goutils/behaviorlog"
 	"github.com/labstack/echo"
-	"github.com/pangpanglabs/goutils/behaviorlog"
 	"github.com/stretchr/testify/assert"
 )
 

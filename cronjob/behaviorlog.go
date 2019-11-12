@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/hillfolk/goutils/behaviorlog"
+	"github.com/hillfolk/goutils/kafka"
 	"github.com/labstack/gommon/random"
-	"github.com/pangpanglabs/goutils/behaviorlog"
-	"github.com/pangpanglabs/goutils/kafka"
 	"github.com/sirupsen/logrus"
 )
 

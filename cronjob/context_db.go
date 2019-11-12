@@ -3,9 +3,9 @@ package cronjob
 import (
 	"context"
 
-	"github.com/pangpanglabs/goutils/ctxdb"
-	"github.com/pangpanglabs/goutils/echomiddleware"
-	"github.com/pangpanglabs/goutils/kafka"
+	"github.com/hillfolk/goutils/ctxdb"
+	"github.com/hillfolk/goutils/echomiddleware"
+	"github.com/hillfolk/goutils/kafka"
 
 	"github.com/go-xorm/xorm"
 )

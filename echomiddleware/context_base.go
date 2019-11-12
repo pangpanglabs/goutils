@@ -3,8 +3,8 @@ package echomiddleware
 import (
 	"context"
 
+	"github.com/hillfolk/goutils/ctxbase"
 	"github.com/labstack/echo"
-	"github.com/pangpanglabs/goutils/ctxbase"
 )
 
 func ContextBase() echo.MiddlewareFunc {

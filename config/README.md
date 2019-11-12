@@ -9,7 +9,7 @@ package main
 import (
 	"flag"
 
-	"github.com/pangpanglabs/goutils/config"
+	"github.com/hillfolk/goutils/config"
 )
 
 func main() {

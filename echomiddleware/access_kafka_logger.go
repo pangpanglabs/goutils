@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
+	"github.com/hillfolk/goutils/kafka"
 	"github.com/labstack/echo"
-	"github.com/pangpanglabs/goutils/kafka"
 )
 
 type TeeReadCloser struct {

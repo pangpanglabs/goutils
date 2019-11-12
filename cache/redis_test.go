@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pangpanglabs/goutils/cache"
-	"github.com/pangpanglabs/goutils/test"
+	"github.com/hillfolk/goutils/cache"
+	"github.com/hillfolk/goutils/test"
 )
 
 // Prerequisite: `docker run --name redis -p 6379:6379 -d redis:alpine``

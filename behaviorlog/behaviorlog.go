@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hillfolk/goutils/ctxbase"
+	"github.com/hillfolk/goutils/kafka"
 	"github.com/labstack/echo"
-	"github.com/pangpanglabs/goutils/ctxbase"
-	"github.com/pangpanglabs/goutils/kafka"
 	"github.com/sirupsen/logrus"
 )
 

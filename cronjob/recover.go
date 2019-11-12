@@ -6,7 +6,7 @@ import (
 	"log"
 	"runtime"
 
-	"github.com/pangpanglabs/goutils/behaviorlog"
+	"github.com/hillfolk/goutils/behaviorlog"
 )
 
 func Recover() Middleware {

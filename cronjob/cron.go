@@ -6,7 +6,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/pangpanglabs/goutils/echomiddleware"
+	"github.com/hillfolk/goutils/echomiddleware"
 	"github.com/robfig/cron"
 	"github.com/sirupsen/logrus"
 )

@@ -12,9 +12,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/hillfolk/goutils/behaviorlog"
+	"github.com/hillfolk/goutils/kafka"
 	"github.com/labstack/echo"
-	"github.com/pangpanglabs/goutils/behaviorlog"
-	"github.com/pangpanglabs/goutils/kafka"
 	"github.com/sirupsen/logrus"
 )
 

@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/pangpanglabs/goutils/behaviorlog"
-	"github.com/pangpanglabs/goutils/ctxbase"
-	"github.com/pangpanglabs/goutils/kafka"
+	"github.com/hillfolk/goutils/behaviorlog"
+	"github.com/hillfolk/goutils/ctxbase"
+	"github.com/hillfolk/goutils/kafka"
 	"xorm.io/core"
 )
 

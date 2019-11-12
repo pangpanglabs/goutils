@@ -3,8 +3,8 @@ package number_test
 import (
 	"testing"
 
-	"github.com/pangpanglabs/goutils/number"
-	"github.com/pangpanglabs/goutils/test"
+	"github.com/hillfolk/goutils/number"
+	"github.com/hillfolk/goutils/test"
 )
 
 func TestNumber(t *testing.T) {
