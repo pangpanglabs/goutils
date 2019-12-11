@@ -27,10 +27,12 @@ func ToFixed(num float64, setting *Setting) float64 {
 	switch setting.RoundStrategy {
 	case "ceil", "Ceil":
 		output := math.Pow(10, float64(setting.RoundDigit))
-		return math.Ceil(float64(Round(num*output))) / output
+		f, _ := strconv.ParseFloat(strconv.FormatFloat(num*output, 'f', 1, 64), 64)
+		return math.Ceil(f) / output
 	case "floor", "Floor":
 		output := math.Pow(10, float64(setting.RoundDigit))
-		return math.Floor(float64(Round(num*output))) / output
+		f, _ := strconv.ParseFloat(strconv.FormatFloat(num*output, 'f', 1, 64), 64)
+		return math.Floor(f) / output
 	case "round", "Round":
 		output := math.Pow(10, float64(setting.RoundDigit))
 		return float64(Round(num*output)) / output
