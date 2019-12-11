@@ -7,6 +7,16 @@ import (
 	"github.com/pangpanglabs/goutils/test"
 )
 
+func TestCeiling(t *testing.T) {
+	num := 79.9
+	s := number.Setting{
+		RoundDigit:    2,
+		RoundStrategy: "ceil",
+	}
+	result := number.ToFixed(num, &s)
+	test.Equals(t, result, 79.9)
+}
+
 func TestNumber(t *testing.T) {
 	r := number.ToFixed(10/3.0, nil)
 	test.Equals(t, r, 3.33)
