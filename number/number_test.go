@@ -8,13 +8,60 @@ import (
 )
 
 func TestCeiling(t *testing.T) {
-	num := 79.9
-	s := number.Setting{
-		RoundDigit:    2,
-		RoundStrategy: "ceil",
-	}
-	result := number.ToFixed(num, &s)
-	test.Equals(t, result, 79.9)
+	t.Run("79.9=>79.9", func(t *testing.T) {
+		num := 79.9
+		s := number.Setting{
+			RoundDigit:    2,
+			RoundStrategy: "ceil",
+		}
+		result := number.ToFixed(num, &s)
+		test.Equals(t, result, 79.9)
+	})
+	t.Run("79.9001=>79.91", func(t *testing.T) {
+		num := 79.9001
+		s := number.Setting{
+			RoundDigit:    2,
+			RoundStrategy: "ceil",
+		}
+		result := number.ToFixed(num, &s)
+		test.Equals(t, result, 79.91)
+	})
+	t.Run("79.900001=>79.91", func(t *testing.T) {
+		num := 79.900001
+		s := number.Setting{
+			RoundDigit:    2,
+			RoundStrategy: "ceil",
+		}
+		result := number.ToFixed(num, &s)
+		test.Equals(t, result, 79.91)
+	})
+	t.Run("11.1=>11.1", func(t *testing.T) {
+		num := 11.1
+		s := number.Setting{
+			RoundDigit:    2,
+			RoundStrategy: "ceil",
+		}
+		result := number.ToFixed(num, &s)
+		test.Equals(t, result, 11.1)
+	})
+	t.Run("11.0001=>11.01", func(t *testing.T) {
+		num := 11.0001
+		s := number.Setting{
+			RoundDigit:    2,
+			RoundStrategy: "ceil",
+		}
+		result := number.ToFixed(num, &s)
+		test.Equals(t, result, 11.01)
+	})
+	t.Run("11.000001=>11.01", func(t *testing.T) {
+		num := 11.000001
+		s := number.Setting{
+			RoundDigit:    2,
+			RoundStrategy: "ceil",
+		}
+		result := number.ToFixed(num, &s)
+		test.Equals(t, result, 11.01)
+	})
 }
 
 func TestNumber(t *testing.T) {
