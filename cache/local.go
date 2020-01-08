@@ -47,3 +47,20 @@ func (c *Local) Delete(key string) error {
 	c.m.Delete(key)
 	return nil
 }
+func (c *Local) Load(key string, value interface{}) (ok bool) {
+	result, ok := c.m.Load(key)
+	if !ok {
+		return false
+	}
+	if err := writeTo(result, value); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"key":    key,
+			"result": result,
+		}).WithError(err).Error("Fail to write to value")
+		return false
+	}
+	return true
+}
+func (c *Local) Store(key string, value interface{}) {
+	c.m.Store(key, value)
+}

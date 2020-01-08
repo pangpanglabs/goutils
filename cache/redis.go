@@ -76,6 +76,16 @@ func (r *Redis) LoadOrStore(key string, value interface{}, getter func() (interf
 	return false, nil
 }
 
+func (r *Redis) Load(key string, value interface{}) (ok bool) {
+	if err := r.getFromRedis(key, value); err == nil {
+		return true
+	}
+	return false
+}
+func (r *Redis) Store(key string, value interface{}) {
+	go r.setToRedis(key, value)
+}
+
 func (r *Redis) Delete(key string) error {
 	redisConn := r.Get()
 	defer redisConn.Close()
