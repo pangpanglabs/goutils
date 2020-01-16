@@ -3,14 +3,14 @@ package cronjob
 import "context"
 
 type HandlerFunc func(ctx context.Context) error
-type Middleware func(next HandlerFunc) HandlerFunc
+type Middleware func(job, action string, next HandlerFunc) HandlerFunc
 type middlewareChain struct {
 	middlewares []Middleware
 }
 
-func (c middlewareChain) run(f HandlerFunc) HandlerFunc {
+func (c middlewareChain) run(job, action string, f HandlerFunc) HandlerFunc {
 	for i := range c.middlewares {
-		f = c.middlewares[len(c.middlewares)-1-i](f)
+		f = c.middlewares[len(c.middlewares)-1-i](job, action, f)
 	}
 
 	return f
