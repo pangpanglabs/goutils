@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/hillfolk/goutils/behaviorlog"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -11,7 +11,7 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/hillfolk/goutils/kafka"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 type TeeReadCloser struct {

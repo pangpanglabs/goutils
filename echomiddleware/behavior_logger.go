@@ -14,7 +14,7 @@ import (
 
 	"github.com/hillfolk/goutils/behaviorlog"
 	"github.com/hillfolk/goutils/kafka"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 )
 
