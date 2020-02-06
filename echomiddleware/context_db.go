@@ -8,7 +8,7 @@ import (
 	"github.com/go-xorm/xorm"
 	"github.com/hillfolk/goutils/ctxdb"
 	"github.com/hillfolk/goutils/kafka"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 type ContextDBType string

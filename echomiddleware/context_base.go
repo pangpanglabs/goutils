@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/hillfolk/goutils/ctxbase"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 func ContextBase() echo.MiddlewareFunc {

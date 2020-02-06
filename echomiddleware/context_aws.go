@@ -3,7 +3,7 @@ package echomiddleware
 import (
 	"context"
 
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/hillfolk/goutils/ctxaws"
