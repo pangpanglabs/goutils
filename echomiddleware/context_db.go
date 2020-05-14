@@ -18,6 +18,11 @@ var ContextDBName ContextDBType = "DB"
 func ContextDB(service string, xormEngine *xorm.Engine, kafkaConfig kafka.Config) echo.MiddlewareFunc {
 	return ContextDBWithName(service, ContextDBName, xormEngine, kafkaConfig)
 }
+
+func ContextDB2(service string, contextDBName ContextDBType, xormEngine *xorm.Engine, kafkaConfig kafka.Config) echo.MiddlewareFunc {
+	return ContextDBWithName(service, contextDBName, xormEngine, kafkaConfig)
+}
+
 func ContextDBWithName(service string, contexDBName ContextDBType, xormEngine *xorm.Engine, kafkaConfig kafka.Config) echo.MiddlewareFunc {
 	db := ctxdb.New(xormEngine, service, kafkaConfig)
 
