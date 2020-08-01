@@ -8,6 +8,8 @@ import (
 type Cache interface {
 	LoadOrStore(key string, value interface{}, getter func() (interface{}, error)) (loadFromCache bool, err error)
 	Delete(key string) error
+	Load(key string, value interface{}) (ok bool)
+	Store(key string, value interface{})
 }
 
 func writeTo(data, dest interface{}) error {

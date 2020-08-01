@@ -3,9 +3,8 @@ package kafka
 import (
 	"encoding/json"
 	"fmt"
-	"log"
-
 	"github.com/Shopify/sarama"
+	"log"
 )
 
 type Producer struct {
@@ -42,9 +41,13 @@ func (p *Producer) Send(v interface{}) error {
 		return err
 	}
 
+	if p == nil {
+		log.Println("Kafka producer is nil")
+		return fmt.Errorf("Kafka producer is nil")
+	}
 	if p.producer == nil {
 		log.Println("Kafka producer is nil")
-		return fmt.Errorf("Kfka producer is nil")
+		return fmt.Errorf("Kafka producer is nil")
 	}
 
 	p.producer.Input() <- &sarama.ProducerMessage{
@@ -62,7 +65,7 @@ func (p *Producer) SendWithKey(v interface{}, key string) error {
 
 	if p.producer == nil {
 		log.Println("Kafka producer is nil")
-		return fmt.Errorf("Kfka producer is nil")
+		return fmt.Errorf("Kafka producer is nil")
 	}
 
 	if key == "" {

@@ -2,12 +2,11 @@ package cronjob
 
 import (
 	"context"
-	"time"
-
 	"github.com/hillfolk/goutils/behaviorlog"
 	"github.com/hillfolk/goutils/kafka"
 	"github.com/labstack/gommon/random"
 	"github.com/sirupsen/logrus"
+	"time"
 )
 
 func BehaviorLogger(serviceName string, config kafka.Config) Middleware {

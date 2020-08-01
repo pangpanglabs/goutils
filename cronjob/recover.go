@@ -14,7 +14,7 @@ func Recover() Middleware {
 	disableStackAll := false
 	disablePrintStack := false
 
-	return func(next HandlerFunc) HandlerFunc {
+	return func(job, action string, next HandlerFunc) HandlerFunc {
 		return func(ctx context.Context) error {
 
 			defer func() {

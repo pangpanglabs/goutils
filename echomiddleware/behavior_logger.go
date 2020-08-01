@@ -5,17 +5,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/hillfolk/goutils/behaviorlog"
+	"github.com/hillfolk/goutils/kafka"
+	"github.com/labstack/echo/v4"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"regexp"
 	"strings"
 	"sync"
-
-	"github.com/hillfolk/goutils/behaviorlog"
-	"github.com/hillfolk/goutils/kafka"
-	"github.com/labstack/echo/v4"
-	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -71,14 +70,16 @@ func BehaviorLogger(serviceName string, config kafka.Config, options ...func(*be
 			behaviorLogger.BytesSent = res.Size
 			behaviorLogger.Controller, behaviorLogger.Action = echoRouter.getControllerAndAction(c)
 			if body != nil {
+				body := passwordRegex.ReplaceAll(body, []byte(`"$1": "*"`))
 				var bodyParam interface{}
-				d := json.NewDecoder(bytes.NewBuffer(passwordRegex.ReplaceAll(body, []byte(`"$1": "*"`))))
+				d := json.NewDecoder(bytes.NewBuffer(body))
 				d.UseNumber()
-				if err := d.Decode(&bodyParam); err != nil {
-					logrus.WithField("body", string(body)).Error("Decode Request Body Error", err)
+				if err := d.Decode(&bodyParam); err == nil {
+					behaviorLogger.Body = bodyParam
+				} else {
+					behaviorLogger.Body = string(body)
 				}
 
-				behaviorLogger.Body = bodyParam
 			}
 
 			for _, name := range c.ParamNames() {
