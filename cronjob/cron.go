@@ -2,55 +2,83 @@ package cronjob
 
 import (
 	"context"
-	"fmt"
-	"os"
-	"os/signal"
+	"log"
+	"net/http"
 
-	"github.com/hillfolk/goutils/echomiddleware"
-	"github.com/robfig/cron"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
+	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 )
 
 type Cron struct {
+	name  string
 	cron  *cron.Cron
 	chain middlewareChain
 }
 
-func New() *Cron {
-	return &Cron{
-		cron: cron.New(),
-	}
+type Job struct {
+	Name string
+	c    *Cron
 }
-func Default(serviceName string, behaviorlogKafkaConfig echomiddleware.KafkaConfig) *Cron {
+
+func New(name string) *Cron {
 	c := Cron{
+		name: name,
 		cron: cron.New(),
 	}
 
 	c.chain.append(
-		BehaviorLogger(serviceName, behaviorlogKafkaConfig),
 		Recover(),
 	)
 
 	return &c
 }
+
 func (c *Cron) Use(middlewares ...Middleware) {
 	c.chain.append(middlewares...)
 }
-func (c *Cron) AddFunc(spec string, f HandlerFunc) {
+
+func (c *Cron) AddJob(job string) *Job {
+	return &Job{
+		Name: job,
+	}
+}
+func (j *Job) AddAction(action, spec string, f HandlerFunc) *Job {
+	j.c.cron.AddFunc(spec, func() {
+		ctx := context.Background()
+		if err := j.c.chain.run(j.Name, action, f)(ctx); err != nil {
+			logrus.WithError(err).Error("")
+		}
+	})
+	return j
+}
+func (c *Cron) AddAction(action, spec string, f HandlerFunc) {
 	c.cron.AddFunc(spec, func() {
 		ctx := context.Background()
-
-		if err := c.chain.run(f)(ctx); err != nil {
+		if err := c.chain.run(c.name, action, f)(ctx); err != nil {
 			logrus.WithError(err).Error("")
 		}
 	})
 }
 
-func (c *Cron) Start() error {
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt)
+func (c *Cron) Start(address string) {
+	go c.cron.Start()
 
-	c.cron.Start()
+	e := echo.New()
+	e.GET("/ping", func(ctx echo.Context) error {
+		return ctx.String(http.StatusOK, "pong")
+	})
+	e.GET("/entries", func(ctx echo.Context) error {
+		return ctx.JSON(http.StatusOK, c.cron.Entries())
+	})
 
-	return fmt.Errorf("Got signal: %v", <-quit)
+	e.Pre(middleware.RemoveTrailingSlash())
+	e.Use(middleware.Recover())
+	e.Use(middleware.CORS())
+
+	if err := e.Start(address); err != nil {
+		log.Println(err)
+	}
+	c.cron.Stop()
 }
