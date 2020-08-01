@@ -3,8 +3,8 @@ package converter_test
 import (
 	"testing"
 
-	"github.com/pangpanglabs/goutils/converter"
-	"github.com/pangpanglabs/goutils/test"
+	"github.com/hillfolk/goutils/converter"
+	"github.com/hillfolk/goutils/test"
 )
 
 func TestConvert(t *testing.T) {

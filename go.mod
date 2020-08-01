@@ -1,6 +1,6 @@
 module github.com/hillfolk/goutils
 
-go 1.12
+go 1.13
 
 require (
 	github.com/Shopify/sarama v1.24.1
@@ -9,9 +9,10 @@ require (
 	github.com/go-xorm/xorm v0.7.9
 	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/gomodule/redigo v2.0.0+incompatible
+	github.com/klauspost/cpuid v1.3.1 // indirect
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/echo/v4 v4.1.16
-	github.com/pangpanglabs/goutils v0.0.0-20200320140103-932a39405894
+	github.com/pangpanglabs/goutils v0.0.0-20200320140103-932a39405894 // indirect
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/viper v1.6.1
