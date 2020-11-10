@@ -7,7 +7,7 @@ import (
 	"github.com/pangpanglabs/goutils/echomiddleware"
 	"github.com/pangpanglabs/goutils/kafka"
 
-	"github.com/go-xorm/xorm"
+	"xorm.io/xorm"
 )
 
 func ContextDB(service string, xormEngine *xorm.Engine, kafkaConfig kafka.Config) Middleware {

@@ -5,10 +5,10 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/go-xorm/xorm"
 	"github.com/labstack/echo"
 	"github.com/pangpanglabs/goutils/ctxdb"
 	"github.com/pangpanglabs/goutils/kafka"
+	"xorm.io/xorm"
 )
 
 type ContextDBType string
