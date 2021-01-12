@@ -11,7 +11,7 @@ import (
 
 	"github.com/hillfolk/goutils/ctxbase"
 	"github.com/hillfolk/goutils/kafka"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"
 )
 

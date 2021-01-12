@@ -10,14 +10,11 @@ require (
 	github.com/gofrs/uuid v3.2.0+incompatible
 	github.com/gomodule/redigo v2.0.0+incompatible
 	github.com/klauspost/cpuid v1.3.1 // indirect
-	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/echo/v4 v4.1.16
-	github.com/pangpanglabs/goutils v0.0.0-20200320140103-932a39405894 // indirect
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/viper v1.6.1
 	github.com/stretchr/testify v1.5.1
-	xorm.io/core v0.7.2
+	xorm.io/core v0.7.3
+	xorm.io/xorm v1.0.6
 )
-
-replace github.com/go-xorm/xorm => github.com/pangpanglabs/xorm v0.6.7-0.20191028024856-98149f1c9e95
