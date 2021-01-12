@@ -3,8 +3,8 @@ package ctxdb
 import (
 	"context"
 
-	"github.com/go-xorm/xorm"
 	"github.com/hillfolk/goutils/kafka"
+	"xorm.io/xorm"
 )
 
 type ContextDB struct {
@@ -12,7 +12,6 @@ type ContextDB struct {
 }
 
 func New(db *xorm.Engine, service string, config kafka.Config) *ContextDB {
-	db.ShowExecTime()
 	if len(config.Brokers) != 0 {
 		if producer, err := kafka.NewProducer(config.Brokers, config.Topic,
 			kafka.WithDefault(),
