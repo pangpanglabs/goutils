@@ -124,6 +124,19 @@ func (r *HttpReq) WithBehaviorLogContext(logContext *behaviorlog.LogContext) *Ht
 
 	return r
 }
+
+func (r *HttpReq) WithUserAgent(userAgent string) *HttpReq {
+	r.Req.Header.Add("User-Agent", userAgent)
+	return r
+}
+
+func (r *HttpReq) WithCookie(m map[string]string) *HttpReq {
+	for k, v := range m {
+		r.Req.AddCookie(&http.Cookie{Name: k, Value: v})
+	}
+	return r
+}
+
 func (r *HttpReq) Call(v interface{}) (int, error) {
 	return r.call(v, defaultClient)
 }

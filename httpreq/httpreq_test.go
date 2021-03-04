@@ -49,6 +49,8 @@ func TestHttpreq(t *testing.T) {
 			WithToken("token-1").
 			WithRequestID("requestID-1").
 			WithActionID("actionID-1").
+			WithUserAgent("test user agent").
+			WithCookie(map[string]string{"a": "b"}).
 			Call(&v)
 		test.Ok(t, err)
 		test.Equals(t, statusCode, 200)
