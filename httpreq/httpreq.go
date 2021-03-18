@@ -130,6 +130,11 @@ func (r *HttpReq) WithUserAgent(userAgent string) *HttpReq {
 	return r
 }
 
+func (r *HttpReq) WithHeader(key, value string) *HttpReq {
+	r.Req.Header.Add(key, value)
+	return r
+}
+
 func (r *HttpReq) WithCookie(m map[string]string) *HttpReq {
 	for k, v := range m {
 		r.Req.AddCookie(&http.Cookie{Name: k, Value: v})
