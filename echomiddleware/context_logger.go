@@ -19,7 +19,7 @@ func ContextLogger() echo.MiddlewareFunc {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.SetOutput(logger.Writer())
 
-	// logger.Formatter = &logrus.JSONFormatter{}
+	logger.Formatter = &logrus.JSONFormatter{}
 	logger.Level = logrus.InfoLevel
 
 	hooks := logrus.LevelHooks{}
