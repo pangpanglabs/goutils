@@ -2,7 +2,6 @@ package ctxdb
 
 import (
 	"context"
-
 	"github.com/hillfolk/goutils/kafka"
 	"xorm.io/xorm"
 )
